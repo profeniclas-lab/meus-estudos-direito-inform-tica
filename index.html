@@ -1806,8 +1806,6 @@ function gerarProvaConcurso(){
   renderizarQuestao();
   iniciarTimer(min);
   // Sobrescreve o comportamento do botão "Ver Resultado" para voltar ao menu certo
-  const btnHome = document.querySelector('#tela-resultado .acoes-finais button:last-child');
-  if(btnHome) btnHome.setAttribute('onclick', "window._modoProva=null;irPara('tela-dashboard')");
 }
 
 function refazerProvaConcurso(){
@@ -1828,8 +1826,6 @@ function atualizarDesempenhoSimulado(){const box=document.getElementById('simula
 /* ================================================================
    17. BANCO
    ================================================================ */
-let filtroBancoAtual='todos';
-function filtrarBancoTipo(tipo,btn){filtroBancoAtual=tipo;document.querySelectorAll('#filtro-tipo button').forEach(b=>b.classList.remove('ativo'));if(btn)btn.classList.add('ativo');abrirBanco()}
 let filtroBancoAtual='todos';
 function filtrarBancoTipo(tipo,btn){filtroBancoAtual=tipo;document.querySelectorAll('#filtro-tipo button').forEach(b=>b.classList.remove('ativo'));if(btn)btn.classList.add('ativo');abrirBanco()}
 function abrirBanco(){
