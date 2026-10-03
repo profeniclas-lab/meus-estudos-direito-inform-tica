@@ -421,14 +421,27 @@ select:focus{border-color:var(--azul)}
 
 <!-- SIMULADO -->
 <section id="tela-simulado" class="tela">
-  <div class="sub-cabecalho"><div><h2>Simulado</h2><div class="subtitulo-peq">Questões sorteadas dos 19 módulos</div></div></div>
-  <div class="aviso"><b>Como funciona:</b> sorteia questões novas, embaralha alternativas e registra erros para revisão.</div>
-  <div class="config-box"><label for="qtd-por-topico">Questões por módulo<small>1 a 4 — total 19 a 76</small></label>
-    <select id="qtd-por-topico"><option value="1" selected>1 (19)</option><option value="2">2 (38)</option><option value="3">3 (57)</option><option value="4">4 (76)</option></select></div>
-  <div class="config-box"><label for="tempo-simulado">Tempo limite<small>Encerra automaticamente</small></label>
-    <select id="tempo-simulado"><option value="0" selected>Sem limite</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
-  <button class="btn btn-primario btn-grande" onclick="gerarNovoSimulado()">Gerar Novo Simulado</button>
-  <div class="cartao" style="margin-top:18px;"><div class="cartao-titulo"><span class="em">📊</span> Desempenho por módulo</div><div id="simulado-desempenho"></div></div>
+  <div class="sub-cabecalho"><div><h2>Simulado</h2><div class="subtitulo-peq">Escolha o modo de treino</div></div></div>
+
+  <div class="cartao">
+    <div class="cartao-titulo"><span class="em">🏛️</span> Prova de Concurso (20 questões reais)</div>
+    <p style="font-size:.87rem;color:var(--texto-suave);margin-bottom:14px;">Sorteia 20 questões de provas reais de concursos (banca, órgão e ano verificáveis). Embaralha questões e alternativas a cada rodada.</p>
+    <div class="config-box" style="margin-bottom:14px;"><label for="tempo-simulado-pc">Tempo limite<small>Encerra automaticamente</small></label>
+      <select id="tempo-simulado-pc"><option value="0" selected>Sem limite</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
+    <button class="btn btn-primario btn-grande" onclick="(function(){const v=document.getElementById('tempo-simulado-pc').value;document.getElementById('tempo-simulado').value=v;gerarProvaConcurso();})()">🏛️ Iniciar Prova de Concurso</button>
+  </div>
+
+  <div class="cartao">
+    <div class="cartao-titulo"><span class="em">📝</span> Simulado por módulos</div>
+    <div class="aviso"><b>Como funciona:</b> sorteia questões novas dos 19 módulos + 3 questões reais, embaralha alternativas e registra erros.</div>
+    <div class="config-box"><label for="qtd-por-topico">Questões por módulo<small>1 a 4 — total 19 a 76</small></label>
+      <select id="qtd-por-topico"><option value="1" selected>1 (19)</option><option value="2">2 (38)</option><option value="3">3 (57)</option><option value="4">4 (76)</option></select></div>
+    <div class="config-box"><label for="tempo-simulado">Tempo limite<small>Encerra automaticamente</small></label>
+      <select id="tempo-simulado"><option value="0" selected>Sem limite</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option></select></div>
+    <button class="btn btn-primario btn-grande" onclick="window._modoProva=null;gerarNovoSimulado()">Gerar Novo Simulado</button>
+  </div>
+
+  <div class="cartao"><div class="cartao-titulo"><span class="em">📊</span> Desempenho por módulo</div><div id="simulado-desempenho"></div></div>
 </section>
 <section id="tela-questao" class="tela">
   <div class="progresso-topo"><span id="progresso-texto">Questão 1</span><span class="topico-tag" id="progresso-topico">Módulo</span></div>
@@ -453,7 +466,7 @@ select:focus{border-color:var(--azul)}
   <div id="res-desempenho"></div>
   <div id="area-revisao"></div>
   <div class="acoes-finais">
-    <button class="btn btn-secundario" onclick="refazerSimulado()">Refazer</button>
+<button class="btn btn-secundario" onclick="window._modoProva==='concurso'?refazerProvaConcurso():refazerSimulado()">Refazer</button>
     <button class="btn btn-primario" onclick="gerarNovoSimulado()">Novo Simulado</button>
     <button class="btn btn-secundario" onclick="irPara('tela-dashboard')">🏠 Início</button>
   </div>
@@ -464,11 +477,11 @@ select:focus{border-color:var(--azul)}
   <div class="sub-cabecalho"><button class="btn-voltar" onclick="irPara('tela-dashboard')">← Voltar</button><div><h2>Banco de Questões</h2><div class="subtitulo-peq" id="banco-subtitulo"></div></div></div>
   <div class="aviso"><b>Sobre o banco:</b> questões classificadas como <b>REAL</b>, <b>ADAPTADA</b> ou <b>AUTORAL</b>. Nenhuma questão autoral é apresentada como real. Fontes verificáveis são registradas quando disponíveis.</div>
   <div class="filtro-tipo" id="filtro-tipo">
-    <button class="ativo" onclick="filtrarBancoTipo('todos',this)">Todas</button>
-    <button onclick="filtrarBancoTipo('REAL',this)">Reais</button>
-    <button onclick="filtrarBancoTipo('ADAPTADA',this)">Adaptadas</button>
-    <button onclick="filtrarBancoTipo('AUTORAL',this)">Autorais</button>
-  </div>
+  <button class="ativo" onclick="filtrarBancoTipo('todos',this)">Todas</button>
+  <button onclick="filtrarBancoTipo('REAL',this)">🏛️ Reais</button>
+  <button onclick="filtrarBancoTipo('ADAPTADA',this)">Adaptadas</button>
+  <button onclick="filtrarBancoTipo('AUTORAL',this)">Autorais</button>
+</div>
   <div class="lista-topicos" id="lista-topicos"></div>
 </section>
 <section id="tela-topico" class="tela">
@@ -1777,7 +1790,40 @@ function iniciarTimer(min){pararTimer();if(!min||min<=0){document.getElementById
 function pararTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null}}
 function atualizarDisplayTimer(r){const bar=document.getElementById('timer-bar');if(!bar||tempoLimite===0)return;const rest=r!==undefined?r:Math.max(0,tempoLimite-(Date.now()-tempoInicio));const ts=Math.floor(rest/1000),m=Math.floor(ts/60),s=ts%60;document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;bar.classList.remove('alerta','critico');if(rest<=60000)bar.classList.add('critico');else if(rest<=300000)bar.classList.add('alerta')}
 function finalizarPorTempo(){if(simuladoFinalizado)return;simuladoFinalizado=true;pararTimer();mostrarResultado();const r=document.getElementById('resumo-texto');if(r)r.textContent='⏰ Tempo esgotado!'}
-function mostrarResultado(){pararTimer();simuladoFinalizado=true;const total=simulado.length;let acertos=0;const erradas=[],porTopico={};simulado.forEach((q,i)=>{if(!porTopico[q.modulo])porTopico[q.modulo]={q:0,a:0};porTopico[q.modulo].q++;if(respostas[i]===q.correta){acertos++;porTopico[q.modulo].a++}else erradas.push({q,resposta:respostas[i]})});const erros=total-acertos,pct=Math.round((acertos/total)*100);document.getElementById('res-acertos').textContent=acertos;document.getElementById('res-erros').textContent=erros;document.getElementById('res-percentual').textContent=pct+'%';const barra=document.getElementById('barra-resultado-preenchimento');barra.style.width=pct+'%';barra.style.background=pct>=70?'var(--verde)':pct>=50?'var(--amarelo)':'var(--vermelho)';const resumo=document.getElementById('resumo-texto');if(pct===100)resumo.textContent='Excelente! Acertou tudo!';else if(pct>=70)resumo.textContent='Bom desempenho!';else if(pct>=50)resumo.textContent='Você está no caminho. Revise os erros.';else resumo.textContent='Precisa reforçar. Veja os erros abaixo.';if(tempoLimite>0){const g=Math.min(Date.now()-tempoInicio,tempoLimite);const m=Math.floor(g/60000),s=Math.floor((g%60000)/1000);const tf=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;resumo.innerHTML+=`<br><span style="font-size:.82rem;color:var(--texto-suave);">Tempo: ${tf} de ${String(Math.floor(tempoLimite/60000)).padStart(2,'0')}:00</span>`}const despBox=document.getElementById('res-desempenho');despBox.innerHTML=Object.keys(porTopico).map(t=>{const d=porTopico[t],p=Math.round((d.a/d.q)*100);const c=p>=70?'var(--verde)':p>=50?'var(--amarelo)':'var(--vermelho)';return`<div class="desemp-item"><span class="nome">${t}</span><div class="mini-barra"><span style="width:${p}%;background:${c};"></span></div><span class="pct" style="color:${c}">${p}%</span></div>`}).join('');const area=document.getElementById('area-revisao');area.innerHTML='';if(!erradas.length)area.innerHTML=`<div class="mensagem-perfeita">🎉 Acertou tudo!</div>`;else{const h=document.createElement('h3');h.className='secao-titulo';h.textContent=`Erradas (${erradas.length})`;area.appendChild(h);erradas.forEach(({q,resposta})=>{const item=document.createElement('div');item.className='revisao-item';const ls=resposta!=null?String.fromCharCode(65+resposta):'—',lc=String.fromCharCode(65+q.correta);item.innerHTML=`<span class="topico-tag-pequena">${q.modulo}</span><p class="enunciado-rev">${q.enunciado}</p><p class="linha-resposta sua"><span class="marcador">Sua: ${ls})</span> ${resposta!=null?q.alternativas[resposta]:''}</p><p class="linha-resposta certa"><span class="marcador">Correta: ${lc})</span> ${q.alternativas[q.correta]}</p><p class="comentario-rev"><strong>Explicação:</strong> ${q.explicacao}</p>`;area.appendChild(item)});const fracos=Object.keys(porTopico).map(t=>({t,p:Math.round((porTopico[t].a/porTopico[t].q)*100)})).filter(x=>x.p<70).sort((a,b)=>a.p-b.p);if(fracos.length>0){const rec=document.createElement('div');rec.className='cartao';rec.style.marginTop='18px';rec.innerHTML=`<div class="cartao-titulo"><span class="em">🧭</span> Recomendação</div><p style="font-size:.88rem;color:var(--texto-suave);margin-bottom:12px;">Estude novamente:</p><div style="display:flex;flex-wrap:wrap;gap:8px;">${fracos.map(m=>`<button class="btn btn-secundario btn-mini" onclick="abrirModuloPorId('${m.t}')">${m.t} (${m.p}%)</button>`).join('')}</div>`;area.appendChild(rec)}}mostrarTela('tela-resultado')}
+function mostrarResultado(){pararTimer();simuladoFinalizado=true;const total=simulado.length;let acertos=0;const erradas=[],porTopico={};simulado.forEach((q,i)=>{if(!porTopico[q.modulo])porTopico[q.modulo]={q:0,a:0};porTopico[q.modulo].q++;if(respostas[i]===q.correta){acertos++;porTopico[q.modulo].a++}else erradas.push({q,resposta:respostas[i]})});const erros=total-acertos,pct=Math.round((acertos/total)*100);document.getElementById('res-acertos').textContent=acertos;document.getElementById('res-erros').textContent=erros;document.getElementById('res-percentual').textContent=pct+'%';const barra=document.getElementById('barra-resultado-preenchimento');barra.style.width=pct+'%';barra.style.background=pct>=70?'var(--verde)':pct>=50?'var(--amarelo)':'var(--vermelho)';const resumo=document.getElementById('resumo-texto');if(pct===100)resumo.textContent='Excelente! Acertou tudo!';else if(pct>=70)resumo.textContent='Bom desempenho!';else if(pct>=50)resumo.textContent='Você está no caminho. Revise os erros.';else resumo.textContent='Precisa reforçar. Veja os erros abaixo.';if(tempoLimite>0){const g=Math.min(Date.now()-tempoInicio,tempoLimite);const m=Math.floor(g/60000),s=Math.floor((g%60000)/1000);const tf=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;resumo.innerHTML+=`<br><span style="font-size:.82rem;color:var(--texto-suave);">Tempo: ${tf} de ${String(Math.floor(tempoLimite/60000)).padStart(2,'0')}:00</span>`}const despBox=document.getElementById('res-desempenho');despBox.innerHTML=Object.keys(porTopico).map(t=>{const d=porTopico[t],p=Math.round((d.a/d.q)*100);const c=p>=70?'var(--verde)':p>=50?'var(--amarelo)':'var(--vermelho)';return`<div class="desemp-item"><span class="nome">${t}</span><div class="mini-barra"><span style="width:${p}%;background:${c};"></span></div><span class="pct" style="color:${c}">${p}%</span></div>`}).join('');const area=document.getElementById('area-revisao');area.innerHTML='';if(!erradas.length)area.innerHTML=`<div class="mensagem-perfeita">🎉 Acertou tudo!</div>`;else{const h=document.createElement('h3');h.className='secao-titulo';h.textContent=`Erradas (${erradas.length})`;area.appendChild(h);erradas.forEach(({q,resposta})=>{const item=document.createElement('div');item.className='revisao-item';const ls=resposta!=null?String.fromCharCode(65+resposta):'—',lc=String.fromCharCode(65+q.correta);item.innerHTML=`<span class="topico-tag-pequena">${q.modulo}</span><p class="enunciado-rev">${q.enunciado}</p><p class="linha-resposta sua"><span class="marcador">Sua: ${ls})</span> ${resposta!=null?q.alternativas[resposta]:''}</p><p class="linha-resposta certa"><span class="marcador">Correta: ${lc})</span> ${q.alternativas[q.correta]}</p><p class="comentario-rev"><strong>Explicação:</strong> ${q.explicacao}</p>`;area.appendChild(item)});const fracos=Object.keys(porTopico).map(t=>({t,p:Math.round((porTopico[t].a/porTopico[t].q)*100)})).filter(x=>x.p<70).sort((a,b)=>a.p-b.p);if(fracos.length>0){const rec=document.createElement('div');rec.className='cartao';rec.style.marginTop='18px';rec.innerHTML=`<div class="cartao-titulo"><span class="em">🧭</span> Recomendação</div><p style="font-size:.88rem;color:var(--texto-suave);margin-bottom:12px;">Estude novamente:</p><div style="display:flex;flex-wrap:wrap;gap:8px;">${fracos.map(m=>`<button class="btn btn-secundario btn-mini" onclick="abrirModuloPorId('${m.t}')">${m.t} (${m.p}%)</button>`).join('')}</div>`;area.appendChild(rec)}}mostrarTela('tela-resultado')
+let provaConcurso=[];
+function gerarProvaConcurso(){
+  const min = parseInt(document.getElementById('tempo-simulado')?.value || '0', 10) || 0;
+  const sorteadas = embaralhar(QUESTOES_REAIS).slice(0, 20);
+  provaConcurso = sorteadas;
+  simulado = sorteadas.map(q => prepararQuestao(q));
+  indiceAtual = 0;
+  respostas = new Array(simulado.length).fill(null);
+  respondida = false;
+  simuladoFinalizado = false;
+  // Registra que é uma prova de concurso
+  window._modoProva = 'concurso';
+  mostrarTela('tela-questao');
+  renderizarQuestao();
+  iniciarTimer(min);
+  // Sobrescreve o comportamento do botão "Ver Resultado" para voltar ao menu certo
+  const btnHome = document.querySelector('#tela-resultado .acoes-finais button:last-child');
+  if(btnHome) btnHome.setAttribute('onclick', "window._modoProva=null;irPara('tela-dashboard')");
+}
+
+function refazerProvaConcurso(){
+  if(!provaConcurso.length){ gerarProvaConcurso(); return; }
+  const min = parseInt(document.getElementById('tempo-simulado')?.value || '0', 10) || 0;
+  simulado = embaralhar(provaConcurso).map(q => prepararQuestao(q));
+  indiceAtual = 0;
+  respostas = new Array(simulado.length).fill(null);
+  respondida = false;
+  simuladoFinalizado = false;
+  window._modoProva = 'concurso';
+  mostrarTela('tela-questao');
+  renderizarQuestao();
+  iniciarTimer(min);
+}  
 function atualizarDesempenhoSimulado(){const box=document.getElementById('simulado-desempenho');box.innerHTML=MODULOS.map(m=>{const d=estado.porTopico[m.id];const p=d&&d.q?Math.round((d.a/d.q)*100):null;const c=p===null?'var(--texto-suave)':p>=70?'var(--verde)':p>=50?'var(--amarelo)':'var(--vermelho)';return`<div class="desemp-item"><span class="nome">${m.icone} ${m.nome}</span><div class="mini-barra"><span style="width:${p||0}%;background:${c};"></span></div><span class="pct" style="color:${c}">${p===null?'—':p+'%'}</span></div>`}).join('')}
 
 /* ================================================================
@@ -1785,7 +1831,47 @@ function atualizarDesempenhoSimulado(){const box=document.getElementById('simula
    ================================================================ */
 let filtroBancoAtual='todos';
 function filtrarBancoTipo(tipo,btn){filtroBancoAtual=tipo;document.querySelectorAll('#filtro-tipo button').forEach(b=>b.classList.remove('ativo'));if(btn)btn.classList.add('ativo');abrirBanco()}
-function abrirBanco(){const cont=document.getElementById('lista-topicos');cont.innerHTML='';const filtro=filtroBancoAtual==='todos'?BANCO:BANCO.filter(q=>q.tipo===filtroBancoAtual);const porMod={};filtro.forEach(q=>{if(!porMod[q.modulo])porMod[q.modulo]=[];porMod[q.modulo].push(q)});const total=filtro.length;document.getElementById('banco-subtitulo').textContent=`${total} questões · filtro: ${filtroBancoAtual}`;MODULOS.forEach(m=>{const qs=porMod[m.id]||[];if(!qs.length&&filtroBancoAtual!=='todos')return;const b=document.createElement('button');b.className='item-topico';b.innerHTML=`<span class="nome">${m.icone} ${m.nome}</span><span class="contagem">${qs.length} questões ›</span>`;b.onclick=()=>abrirTopico(m.id);cont.appendChild(b)});mostrarTela('tela-banco')}
+let filtroBancoAtual='todos';
+function filtrarBancoTipo(tipo,btn){filtroBancoAtual=tipo;document.querySelectorAll('#filtro-tipo button').forEach(b=>b.classList.remove('ativo'));if(btn)btn.classList.add('ativo');abrirBanco()}
+function abrirBanco(){
+  const cont = document.getElementById('lista-topicos'); cont.innerHTML='';
+  const todas = BANCO.concat(QUESTOES_REAIS.map(q => ({...q, modulo: 'REAIS'})));
+  const filtro = filtroBancoAtual==='todos' ? todas : todas.filter(q => q.tipo === filtroBancoAtual);
+  const porMod = {};
+  filtro.forEach(q => {
+    const key = q.modulo || 'REAIS';
+    if(!porMod[key]) porMod[key] = [];
+    porMod[key].push(q);
+  });
+  document.getElementById('banco-subtitulo').textContent = `${filtro.length} questões · filtro: ${filtroBancoAtual}`;
+  // Módulo "Perguntas Reais" aparece primeiro
+  if(porMod['REAIS'] && porMod['REAIS'].length){
+    const b = document.createElement('button');
+    b.className = 'item-topico';
+    b.innerHTML = `<span class="nome">🏛️ Perguntas Reais (Concursos)</span><span class="contagem">${porMod['REAIS'].length} questões ›</span>`;
+    b.onclick = () => abrirTopicoReal();
+    cont.appendChild(b);
+  }
+  MODULOS.forEach(m => {
+    const qs = porMod[m.id] || [];
+    if(!qs.length && filtroBancoAtual!=='todos') return;
+    const b = document.createElement('button');
+    b.className = 'item-topico';
+    b.innerHTML = `<span class="nome">${m.icone} ${m.nome}</span><span class="contagem">${qs.length} questões ›</span>`;
+    b.onclick = () => abrirTopico(m.id);
+    cont.appendChild(b);
+  });
+  mostrarTela('tela-banco');
+}
+
+function abrirTopicoReal(){
+  const qs = QUESTOES_REAIS;
+  document.getElementById('topico-titulo').textContent = '🏛️ Perguntas Reais (Concursos)';
+  document.getElementById('topico-subtitulo').textContent = `${qs.length} questões reais · gabarito em verde`;
+  const cont = document.getElementById('topico-questoes'); cont.innerHTML='';
+  qs.forEach((q, i) => cont.appendChild(criarCardQuestao({...q, correta: q.respostaCorreta, comentario: q.explicacao, topico: 'REAIS'}, i+1)));
+  mostrarTela('tela-topico');
+}
 function abrirTopico(modulo){const qs=BANCO.filter(q=>q.modulo===modulo);const m=MODULOS.find(x=>x.id===modulo);document.getElementById('topico-titulo').textContent=m?m.icone+' '+m.nome:modulo;document.getElementById('topico-subtitulo').textContent=`${qs.length} questões`;const cont=document.getElementById('topico-questoes');cont.innerHTML='';qs.forEach((q,i)=>cont.appendChild(criarCardQuestao(q,i+1)));mostrarTela('tela-topico')}
 function tagTipoHTML(tipo){const cls=tipo==='REAL'?'tag-real':tipo==='ADAPTADA'?'tag-adaptada':'tag-autoral';return`<span class="tag-tipo ${cls}">${tipo}</span>`}
 
