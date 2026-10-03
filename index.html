@@ -1749,7 +1749,26 @@ let simulado=[],indiceAtual=0,respostas=[],respondida=false;
 let timerInterval=null,tempoLimite=0,tempoInicio=0,simuladoFinalizado=false;
 function embaralhar(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function prepararQuestao(q){const idx=q.alternativas.map((_,i)=>i);const emb=embaralhar(idx);return{...q,alternativas:emb.map(i=>q.alternativas[i]),correta:emb.indexOf(q.respostaCorreta)}}
-function gerarNovoSimulado(){const qtd=parseInt(document.getElementById('qtd-por-topico')?.value||'1',10)||1;const min=parseInt(document.getElementById('tempo-simulado')?.value||'0',10)||0;const sel=[];MODULOS.forEach(m=>{const dt=BANCO.filter(q=>q.modulo===m.id);embaralhar(dt).slice(0,qtd).forEach(q=>sel.push(prepararQuestao(q)))});simulado=embaralhar(sel);indiceAtual=0;respostas=new Array(simulado.length).fill(null);respondida=false;simuladoFinalizado=false;mostrarTela('tela-questao');renderizarQuestao();iniciarTimer(min)}
+function gerarNovoSimulado(){
+  const qtd = parseInt(document.getElementById('qtd-por-topico')?.value || '1', 10) || 1;
+  const min = parseInt(document.getElementById('tempo-simulado')?.value || '0', 10) || 0;
+  const sel = [];
+  // Questões dos módulos
+  MODULOS.forEach(m => {
+    const dt = BANCO.filter(q => q.modulo === m.id);
+    embaralhar(dt).slice(0, qtd).forEach(q => sel.push(prepararQuestao(q)));
+  });
+  // 3 questões reais entram em TODO simulado para expor o aluno ao padrão de banca
+  embaralhar(QUESTOES_REAIS).slice(0, 3).forEach(q => sel.push(prepararQuestao(q)));
+  simulado = embaralhar(sel);
+  indiceAtual = 0;
+  respostas = new Array(simulado.length).fill(null);
+  respondida = false;
+  simuladoFinalizado = false;
+  mostrarTela('tela-questao');
+  renderizarQuestao();
+  iniciarTimer(min);
+}
 function refazerSimulado(){const min=parseInt(document.getElementById('tempo-simulado')?.value||'0',10)||0;const re=simulado.map(q=>prepararQuestao(q));simulado=embaralhar(re);indiceAtual=0;respostas=new Array(simulado.length).fill(null);respondida=false;simuladoFinalizado=false;mostrarTela('tela-questao');renderizarQuestao();iniciarTimer(min)}
 function renderizarQuestao(){const q=simulado[indiceAtual],total=simulado.length;document.getElementById('progresso-texto').textContent=`Questão ${indiceAtual+1} de ${total}`;document.getElementById('progresso-topico').textContent=q.modulo;document.getElementById('barra-progresso').style.width=`${((indiceAtual+1)/total)*100}%`;document.getElementById('enunciado').textContent=q.enunciado;const alts=document.getElementById('alternativas');alts.innerHTML='';q.alternativas.forEach((t,i)=>{const b=document.createElement('button');b.className='alternativa';b.innerHTML=`<span class="letra">${String.fromCharCode(65+i)})</span><span>${t}</span>`;b.onclick=()=>responder(i);alts.appendChild(b)});const fb=document.getElementById('feedback');fb.className='feedback';document.getElementById('titulo-feedback').textContent='';document.getElementById('comentario').textContent='';document.getElementById('btn-proxima').style.display='none';respondida=false;atualizarDisplayTimer()}
 function responder(i){if(respondida)return;respondida=true;const q=simulado[indiceAtual],acertou=i===q.correta;respostas[indiceAtual]=i;document.querySelectorAll('#alternativas .alternativa').forEach((b,idx)=>{b.disabled=true;if(idx===q.correta)b.classList.add('correta');if(idx===i&&!acertou)b.classList.add('errada')});const fb=document.getElementById('feedback'),tit=document.getElementById('titulo-feedback'),com=document.getElementById('comentario');if(acertou){fb.className='feedback visivel acerto';tit.textContent='✅ Correto!';estado.xp+=10;estado.seqAtual++;estado.melhorSeq=Math.max(estado.melhorSeq,estado.seqAtual)}else{fb.className='feedback visivel erro';tit.textContent=`❌ Incorreto. Resposta: ${String.fromCharCode(65+q.correta)}.`;estado.seqAtual=0;registrarErradaSimples(q,i)}estado.questoes++;if(acertou)estado.acertos++;if(!estado.porTopico[q.modulo])estado.porTopico[q.modulo]={q:0,a:0};estado.porTopico[q.modulo].q++;if(acertou)estado.porTopico[q.modulo].a++;salvarEstado();com.innerHTML=`<div><b>Explicação:</b> ${q.explicacao}</div>`;const btn=document.getElementById('btn-proxima');btn.textContent=(indiceAtual===simulado.length-1)?'Ver Resultado':'Próxima';btn.style.display='inline-block'}
