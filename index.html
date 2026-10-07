@@ -1,11 +1,12 @@
 <!--
 Aplicativo: Administração e Direito Administrativo para Concursos
-Versão: 0.3
-Fase: 3
+Versão: 0.4
+Fase: 4
 Status: funcional
 Changelog:
-v0.3 - Fase 3: Diagnóstico inicial (múltipla escolha, V/F, situações, autoavaliação). Análise por subtema. Recomendações.
-v0.2 - Fase 2: Conteúdo pedagógico completo para ADM-01, ADM-02, ADM-03. Modo Professor. Recuperação ativa.
+v0.4 - Fase 4: Motor de questões completo, filtros, caderno de erros, revisão espaçada, estatísticas.
+v0.3 - Fase 3: Diagnóstico inicial (múltipla escolha, V/F, situações, autoavaliação).
+v0.2 - Fase 2: Conteúdo pedagógico completo para ADM-01, ADM-02, ADM-03.
 v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
 -->
 <!DOCTYPE html>
@@ -13,7 +14,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN-DIR v0.3 | Concursos Nível Médio</title>
+    <title>ADMIN-DIR v0.4 | Concursos Nível Médio</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -113,7 +114,6 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
-        /* Estilos da Aula (Fase 2) */
         .lesson-section { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--border); }
         .lesson-section:last-child { border-bottom: none; }
         .lesson-section h3 { color: var(--primary); font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -140,132 +140,129 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
         .recovery-btn { font-size: 0.8rem; padding: 0.4rem 0.8rem; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; }
         .lesson-nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
 
-        /* =========================================
-           ESTILOS DO DIAGNÓSTICO (FASE 3)
-           ========================================= */
-        .diag-progress-bar {
-            width: 100%; height: 8px; background: var(--border);
-            border-radius: 4px; margin-bottom: 1rem; overflow: hidden;
-        }
-        .diag-progress-fill {
-            height: 100%; background: var(--primary);
-            border-radius: 4px; transition: width 0.4s ease;
-        }
-        .diag-step-info {
-            font-size: 0.85rem; color: var(--text-muted);
-            margin-bottom: 0.5rem; text-align: center;
-        }
-        .diag-type-badge {
-            display: inline-block; font-size: 0.7rem; padding: 2px 8px;
-            border-radius: 12px; font-weight: 600; margin-bottom: 0.75rem;
-        }
+        .diag-progress-bar { width: 100%; height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
+        .diag-progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.4s ease; }
+        .diag-step-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; text-align: center; }
+        .diag-type-badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; margin-bottom: 0.75rem; }
         .diag-type-multipla { background: #dbeafe; color: #1e40af; }
         .diag-type-vf { background: #fef3c7; color: #92400e; }
         .diag-type-situacao { background: #ede9fe; color: #5b21b6; }
         .diag-type-auto { background: #dcfce7; color: #166534; }
+        .diag-question-text { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; line-height: 1.5; }
+        .diag-situation-context { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: var(--radius); padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; font-style: italic; }
+        .diag-alternatives { display: flex; flex-direction: column; gap: 0.5rem; }
+        .diag-alt-btn { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.2s; text-align: left; font-size: 0.95rem; width: 100%; }
+        .diag-alt-btn:hover { border-color: var(--primary); background: #eff6ff; }
+        .diag-alt-btn.selected { border-color: var(--primary); background: #dbeafe; font-weight: 600; }
+        .diag-alt-btn.correct { border-color: var(--success); background: #dcfce7; }
+        .diag-alt-btn.wrong { border-color: var(--danger); background: #fee2e2; }
+        .diag-alt-letter { min-width: 28px; height: 28px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+        .diag-alt-btn.selected .diag-alt-letter { background: var(--primary); color: white; }
+        .diag-alt-btn.correct .diag-alt-letter { background: var(--success); color: white; }
+        .diag-alt-btn.wrong .diag-alt-letter { background: var(--danger); color: white; }
+        .diag-vf-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .diag-vf-btn { padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-size: 1rem; font-weight: 700; text-align: center; transition: all 0.2s; }
+        .diag-vf-btn:hover { border-color: var(--primary); }
+        .diag-vf-btn.selected-v { border-color: var(--success); background: #dcfce7; color: var(--success); }
+        .diag-vf-btn.selected-f { border-color: var(--danger); background: #fee2e2; color: var(--danger); }
+        .diag-vf-btn.correct { border-color: var(--success); background: #dcfce7; }
+        .diag-vf-btn.wrong { border-color: var(--danger); background: #fee2e2; }
+        .diag-auto-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .diag-auto-btn { padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-size: 0.95rem; font-weight: 600; text-align: center; transition: all 0.2s; }
+        .diag-auto-btn:hover { border-color: var(--primary); }
+        .diag-auto-btn.selected { border-color: var(--primary); background: #dbeafe; }
+        .diag-feedback { margin-top: 1rem; padding: 1rem; border-radius: var(--radius); font-size: 0.9rem; display: none; }
+        .diag-feedback.visible { display: block; }
+        .diag-feedback.correct { background: #dcfce7; border: 1px solid #86efac; }
+        .diag-feedback.wrong { background: #fee2e2; border: 1px solid #fca5a5; }
+        .diag-feedback.neutral { background: #eff6ff; border: 1px solid #93c5fd; }
+        .diag-result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+        .diag-result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .diag-score-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: white; }
+        .diag-score-good { background: var(--success); }
+        .diag-score-medium { background: var(--warning); }
+        .diag-score-bad { background: var(--danger); }
+        .diag-subtopic-bar { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .diag-subtopic-bar .bar-bg { flex: 1; height: 12px; background: var(--border); border-radius: 6px; overflow: hidden; }
+        .diag-subtopic-bar .bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s; }
+        .diag-subtopic-label { min-width: 120px; font-weight: 600; }
+        .diag-subtopic-value { min-width: 40px; text-align: right; font-weight: 600; }
+        .diag-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin: 2px; }
+        .diag-tag-strength { background: #dcfce7; color: #166534; }
+        .diag-tag-weakness { background: #fee2e2; color: #991b1b; }
+        .diag-tag-neutral { background: #f1f5f9; color: #475569; }
 
-        .diag-question-text {
+        .quiz-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+        }
+        .quiz-progress-text { font-size: 0.85rem; color: var(--text-muted); }
+        .quiz-filters {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .quiz-filter-select {
+            padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);
+            font-size: 0.9rem; background: var(--surface);
+        }
+        .quiz-question-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
+        }
+        .quiz-type-badge {
+            display: inline-block; font-size: 0.7rem; padding: 2px 8px;
+            border-radius: 12px; font-weight: 600; margin-bottom: 0.75rem;
+        }
+        .quiz-type-real { background: #fef3c7; color: #92400e; }
+        .quiz-type-didatica { background: #dbeafe; color: #1e40af; }
+        .quiz-statement {
             font-size: 1rem; font-weight: 600; margin-bottom: 1rem; line-height: 1.5;
         }
-        .diag-situation-context {
-            background: #f0f9ff; border: 1px solid #bae6fd; border-radius: var(--radius);
-            padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; font-style: italic;
-        }
-        .diag-alternatives { display: flex; flex-direction: column; gap: 0.5rem; }
-        .diag-alt-btn {
+        .quiz-alternatives { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .quiz-alt-btn {
             display: flex; align-items: flex-start; gap: 0.75rem;
             padding: 0.75rem 1rem; background: var(--surface);
             border: 2px solid var(--border); border-radius: var(--radius);
             cursor: pointer; transition: all 0.2s; text-align: left;
             font-size: 0.95rem; width: 100%;
         }
-        .diag-alt-btn:hover { border-color: var(--primary); background: #eff6ff; }
-        .diag-alt-btn.selected { border-color: var(--primary); background: #dbeafe; font-weight: 600; }
-        .diag-alt-btn.correct { border-color: var(--success); background: #dcfce7; }
-        .diag-alt-btn.wrong { border-color: var(--danger); background: #fee2e2; }
-        .diag-alt-letter {
+        .quiz-alt-btn:hover:not(.disabled) { border-color: var(--primary); background: #eff6ff; }
+        .quiz-alt-btn.selected { border-color: var(--primary); background: #dbeafe; font-weight: 600; }
+        .quiz-alt-btn.correct { border-color: var(--success); background: #dcfce7; }
+        .quiz-alt-btn.wrong { border-color: var(--danger); background: #fee2e2; }
+        .quiz-alt-btn.disabled { pointer-events: none; opacity: 0.7; }
+        .quiz-alt-letter {
             min-width: 28px; height: 28px; border-radius: 50%;
             background: var(--bg); display: flex; align-items: center;
             justify-content: center; font-weight: 700; font-size: 0.85rem;
             flex-shrink: 0;
         }
-        .diag-alt-btn.selected .diag-alt-letter { background: var(--primary); color: white; }
-        .diag-alt-btn.correct .diag-alt-letter { background: var(--success); color: white; }
-        .diag-alt-btn.wrong .diag-alt-letter { background: var(--danger); color: white; }
-
-        .diag-vf-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-        .diag-vf-btn {
-            padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius);
-            background: var(--surface); cursor: pointer; font-size: 1rem;
-            font-weight: 700; text-align: center; transition: all 0.2s;
-        }
-        .diag-vf-btn:hover { border-color: var(--primary); }
-        .diag-vf-btn.selected-v { border-color: var(--success); background: #dcfce7; color: var(--success); }
-        .diag-vf-btn.selected-f { border-color: var(--danger); background: #fee2e2; color: var(--danger); }
-        .diag-vf-btn.correct { border-color: var(--success); background: #dcfce7; }
-        .diag-vf-btn.wrong { border-color: var(--danger); background: #fee2e2; }
-
-        .diag-auto-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-        .diag-auto-btn {
-            padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius);
-            background: var(--surface); cursor: pointer; font-size: 0.95rem;
-            font-weight: 600; text-align: center; transition: all 0.2s;
-        }
-        .diag-auto-btn:hover { border-color: var(--primary); }
-        .diag-auto-btn.selected { border-color: var(--primary); background: #dbeafe; }
-
-        .diag-feedback {
+        .quiz-alt-btn.selected .quiz-alt-letter { background: var(--primary); color: white; }
+        .quiz-alt-btn.correct .quiz-alt-letter { background: var(--success); color: white; }
+        .quiz-alt-btn.wrong .quiz-alt-letter { background: var(--danger); color: white; }
+        .quiz-feedback {
             margin-top: 1rem; padding: 1rem; border-radius: var(--radius);
             font-size: 0.9rem; display: none;
         }
-        .diag-feedback.visible { display: block; }
-        .diag-feedback.correct { background: #dcfce7; border: 1px solid #86efac; }
-        .diag-feedback.wrong { background: #fee2e2; border: 1px solid #fca5a5; }
-        .diag-feedback.neutral { background: #eff6ff; border: 1px solid #93c5fd; }
-
-        .diag-result-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
+        .quiz-feedback.visible { display: block; }
+        .quiz-feedback.correct { background: #dcfce7; border: 1px solid #86efac; }
+        .quiz-feedback.wrong { background: #fee2e2; border: 1px solid #fca5a5; }
+        .quiz-feedback-section {
+            margin-top: 0.75rem; padding-top: 0.75rem;
+            border-top: 1px dashed var(--border);
         }
-        .diag-result-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 0.75rem;
+        .quiz-feedback-section:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+        .quiz-feedback-section strong { display: block; margin-bottom: 0.25rem; color: var(--text); }
+        .quiz-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
+        .quiz-empty {
+            text-align: center; padding: 2rem; color: var(--text-muted);
         }
-        .diag-score-circle {
-            width: 60px; height: 60px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.1rem; color: white;
-        }
-        .diag-score-good { background: var(--success); }
-        .diag-score-medium { background: var(--warning); }
-        .diag-score-bad { background: var(--danger); }
-
-        .diag-subtopic-bar {
-            display: flex; align-items: center; gap: 0.5rem;
-            margin-bottom: 0.5rem; font-size: 0.85rem;
-        }
-        .diag-subtopic-bar .bar-bg {
-            flex: 1; height: 12px; background: var(--border);
-            border-radius: 6px; overflow: hidden;
-        }
-        .diag-subtopic-bar .bar-fill {
-            height: 100%; border-radius: 6px; transition: width 0.5s;
-        }
-        .diag-subtopic-label { min-width: 120px; font-weight: 600; }
-        .diag-subtopic-value { min-width: 40px; text-align: right; font-weight: 600; }
-
-        .diag-tag {
-            display: inline-block; padding: 3px 8px; border-radius: 4px;
-            font-size: 0.75rem; font-weight: 600; margin: 2px;
-        }
-        .diag-tag-strength { background: #dcfce7; color: #166534; }
-        .diag-tag-weakness { background: #fee2e2; color: #991b1b; }
-        .diag-tag-neutral { background: #f1f5f9; color: #475569; }
+        .quiz-empty-icon { font-size: 3rem; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
     <header>
-        <div class="brand">ADMIN-DIR <span class="version" id="app-version">v0.3</span></div>
+        <div class="brand">ADMIN-DIR <span class="version" id="app-version">v0.4</span></div>
         <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; margin:0;" onclick="App.resetData()">Reset</button>
     </header>
     <main id="app-container"></main>
@@ -283,9 +280,6 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
     <div id="toast"></div>
 
     <script>
-        /* =========================================
-           1. CAMADA DE DADOS (DATA LAYER)
-           ========================================= */
         const Data = {
             modules: [
                 { id: "ADM-01", area: "ADM", title: "Fundamentos da Administração", priority: "alta" },
@@ -294,288 +288,118 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 { id: "AP-01", area: "AP", title: "Conceitos de Administração Pública", priority: "alta" },
                 { id: "DA-01", area: "DA", title: "Introdução ao Direito Administrativo", priority: "alta" }
             ],
-
-            /* =========================================
-               CONTEÚDO PEDAGÓGICO (FASE 2)
-               ========================================= */
             lessons: {
                 "ADM-01": {
                     objective: "Compreender o conceito de Administração, diferenciar eficiência, eficácia e efetividade, e identificar os recursos organizacionais e os níveis hierárquicos das organizações.",
                     prerequisites: [],
-                    introduction: "Administrar é uma atividade presente em todos os aspectos da vida humana. Seja organizando seu tempo de estudo, gerenciando as finanças de casa ou dirigindo uma grande empresa, você está administrando. Neste módulo, vamos entender o que é Administração do ponto de vista técnico e como ela se aplica às organizações — especialmente às públicas.",
-                    detailed: "A <strong>Administração</strong> é o processo de planejar, organizar, dirigir e controlar o uso de recursos (humanos, financeiros, materiais, tecnológicos e informacionais) para alcançar objetivos organizacionais.\n\nUma <strong>organização</strong> é um grupo de pessoas que trabalham juntas de forma coordenada para atingir metas comuns. Elas podem ser:\n• <strong>Públicas</strong>: vinculadas ao Estado (ex: ministérios, prefeituras, universidades federais).\n• <strong>Privadas</strong>: visam lucro (ex: empresas).\n• <strong>Do terceiro setor</strong>: sem fins lucrativos (ex: ONGs, fundações).\n\nOs <strong>recursos organizacionais</strong> são os meios disponíveis para alcançar os objetivos:\n• <strong>Humanos</strong>: pessoas, competências, trabalho.\n• <strong>Financeiros</strong>: dinheiro, capital, orçamento.\n• <strong>Materiais</strong>: equipamentos, matérias-primas, instalações.\n• <strong>Tecnológicos</strong>: máquinas, softwares, técnicas.\n• <strong>Informacionais</strong>: dados, conhecimento, sistemas.\n\nAs organizações possuem <strong>três níveis hierárquicos</strong>:\n• <strong>Estratégico</strong>: alta direção. Define missão, visão e objetivos de longo prazo.\n• <strong>Tático</strong>: gerência/médio escalão. Traduz a estratégia em planos departamentais.\n• <strong>Operacional</strong>: supervisão/execução. Realiza as tarefas do dia a dia.",
-                    technical: "Tecnicamente, a Administração é uma <strong>ciência social aplicada</strong> que estuda as organizações sob a perspectiva de seus processos decisórios, estruturas e comportamentos. Seu objeto de estudo é a <strong>organização</strong> e seu entorno.",
-                    examples: ["Um prefeito (nível estratégico) define que a meta da prefeitura é reduzir o tempo de atendimento ao cidadão em 30% em 2 anos.", "O secretário de administração (nível tático) cria um plano para digitalizar os atendimentos.", "O chefe da seção de atendimento (nível operacional) coordena os servidores que atendem o público."],
+                    introduction: "Administrar é uma atividade presente em todos os aspectos da vida humana.",
+                    detailed: "A <strong>Administração</strong> é o processo de planejar, organizar, dirigir e controlar o uso de recursos.",
+                    technical: "Tecnicamente, a Administração é uma <strong>ciência social aplicada</strong>.",
+                    examples: ["Um prefeito define metas de longo prazo."],
                     comparisons: [
-                        { concept: "Eficiência", definition: "Foco nos MEIOS. Fazer mais com menos.", highlight: "Faz as coisas CERTAmente." },
-                        { concept: "Eficácia", definition: "Foco nos FINS. Alcançar o objetivo.", highlight: "Faz as coisas CERTAS." },
-                        { concept: "Efetividade", definition: "Foco no IMPACTO real.", highlight: "Gera IMPACTO real." }
+                        { concept: "Eficiência", definition: "Foco nos MEIOS.", highlight: "Faz as coisas CERTAmente." },
+                        { concept: "Eficácia", definition: "Foco nos FINS.", highlight: "Faz as coisas CERTAS." }
                     ],
-                    publicAdminApplication: "Na Administração Pública, o princípio da eficiência está expresso no Art. 37 da CF. Um órgão público eficiente usa bem o dinheiro público; eficaz atinge suas metas; efetivo realmente melhora a vida da população.",
-                    traps: ["As bancas adoram INVERTER as definições de eficiência e eficácia.", "Cuidado com 'efetividade': ela vai além da eficácia, medindo o IMPACTO real.", "Organização NÃO é sinônimo de empresa."],
-                    commonErrors: ["Achar que eficiência e eficácia são a mesma coisa.", "Esquecer que o nível estratégico define o LONGO PRAZO.", "Confundir recursos 'tecnológicos' apenas com computadores."],
-                    summary: "• Administração = planejar, organizar, dirigir e controlar recursos.\n• Organizações = grupos coordenados com metas comuns.\n• Recursos = humanos, financeiros, materiais, tecnológicos, informacionais.\n• 3 Níveis = estratégico, tático, operacional.\n• 3 Es = eficiência (meios), eficácia (fins), efetividade (impacto).",
-                    simpleExplanation: "Imagine que você vai fazer uma viagem. Eficiência é gastar pouco combustível. Eficácia é chegar ao destino. Efetividade é a viagem ter valido a pena.",
-                    moreExamples: ["Um hospital compra equipamentos mais baratos (eficiência), reduz a fila (eficácia), e os pacientes melhoram de saúde (efetividade)."],
-                    examFocus: "As bancas cobram muito: 1) Diferença entre eficiência e eficácia. 2) Os 3 níveis hierárquicos. 3) Os 5 tipos de recursos. 4) Conceito de organização.",
+                    publicAdminApplication: "Na Administração Pública, o princípio da eficiência está no Art. 37 da CF.",
+                    traps: ["As bancas adoram INVERTER as definições de eficiência e eficácia."],
+                    commonErrors: ["Achar que eficiência e eficácia são a mesma coisa."],
+                    summary: "• Administração = planejar, organizar, dirigir e controlar recursos.",
+                    simpleExplanation: "Imagine que você vai fazer uma viagem.",
+                    moreExamples: ["Um hospital compra equipamentos mais baratos."],
+                    examFocus: "As bancas cobram muito: 1) Diferença entre eficiência e eficácia.",
                     activeRecovery: [
-                        { question: "Qual a diferença entre eficiência e eficácia?", answer: "Eficiência = MEIOS. Eficácia = FINS." },
-                        { question: "Quais são os 5 recursos organizacionais?", answer: "Humanos, financeiros, materiais, tecnológicos e informacionais." },
-                        { question: "Qual nível hierárquico define objetivos de longo prazo?", answer: "Nível Estratégico." },
-                        { question: "Uma ONG é uma organização?", answer: "Sim. É uma organização do terceiro setor." }
+                        { question: "Qual a diferença entre eficiência e eficácia?", answer: "Eficiência = MEIOS. Eficácia = FINS." }
                     ]
                 },
                 "ADM-02": {
-                    objective: "Dominar as quatro funções administrativas (PODC) e compreender como elas se integram no processo administrativo.",
+                    objective: "Dominar as quatro funções administrativas (PODC).",
                     prerequisites: ["ADM-01"],
-                    introduction: "O PODC é o 'como fazer' da Administração. São quatro funções que todo administrador exerce: Planejar, Organizar, Dirigir e Controlar.",
-                    detailed: "O <strong>Processo Administrativo</strong> é composto por quatro funções inter-relacionadas:\n\n<strong>1. PLANEJAMENTO</strong> — Definir objetivos e decidir como alcançá-los. Olha para o FUTURO.\n<strong>2. ORGANIZAÇÃO</strong> — Distribuir tarefas, recursos e responsabilidades. Cria a ESTRUTURA.\n<strong>3. DIREÇÃO</strong> — Conduzir e motivar pessoas. Lida com PESSOAS.\n<strong>4. CONTROLE</strong> — Monitorar resultados e corrigir desvios. Foca em RESULTADOS.\n\nEssas funções são CONTÍNUAS e SIMULTÂNEAS, não sequenciais.",
-                    technical: "A sistematização do PODC tem raízes em Henri Fayol (1916), que originalmente identificou 5 funções: Prever, Organizar, Comandar, Coordenar e Controlar.",
-                    examples: ["Planejamento: A prefeitura define que vai construir 5 UBS em 2 anos.", "Organização: Cria-se uma comissão para executar a obra.", "Direção: O gestor motiva a equipe.", "Controle: Verifica-se mensalmente se o cronograma está sendo cumprido."],
+                    introduction: "O PODC é o 'como fazer' da Administração.",
+                    detailed: "O <strong>Processo Administrativo</strong> é composto por quatro funções: Planejamento, Organização, Direção e Controle.",
+                    technical: "A sistematização do PODC tem raízes em Henri Fayol (1916).",
+                    examples: ["Planejamento: A prefeitura define que vai construir 5 UBS."],
                     comparisons: [
                         { concept: "Planejamento", definition: "Define objetivos.", focus: "FUTURO" },
-                        { concept: "Organização", definition: "Distribui tarefas.", focus: "ESTRUTURA" },
-                        { concept: "Direção", definition: "Conduz pessoas.", focus: "PESSOAS" },
-                        { concept: "Controle", definition: "Monitora resultados.", focus: "RESULTADOS" }
+                        { concept: "Organização", definition: "Distribui tarefas.", focus: "ESTRUTURA" }
                     ],
-                    publicAdminApplication: "No serviço público, o planejamento se materializa no PPA. A organização nos decretos e regimentos. A direção na gestão de servidores. O controle nas controladorias e Tribunais de Contas.",
-                    traps: ["O PODC NÃO é sequencial — é cíclico.", "Direção NÃO é apenas 'dar ordens'.", "Controle NÃO é punição.", "Não confunda 'Controle' (função) com 'Controle da Administração Pública' (fiscalização)."],
-                    commonErrors: ["Achar que o PODC é linear.", "Esquecer que Organização trata da ESTRUTURA.", "Confundir Direção com autoritarismo."],
-                    summary: "• PODC = Planejamento, Organização, Direção, Controle.\n• São CONTÍNUAS e INTEGRADAS.\n• Planejamento=FUTURO; Organização=ESTRUTURA; Direção=PESSOAS; Controle=RESULTADOS.\n• Origem: Henri Fayol.",
-                    simpleExplanation: "Pense em um técnico de futebol. Ele planeja a estratégia, organiza as posições, dirige a equipe no jogo e controla o resultado.",
-                    moreExamples: ["Um diretor de escola planeja o ano letivo, organiza horários, dirige a equipe pedagógica e controla as notas dos alunos."],
-                    examFocus: "O PODC cai em QUASE TODAS as provas. As bancas pedem: 1) Qual função corresponde a cada descrição. 2) Se o PODC é sequencial (NÃO é). 3) Origem (Fayol).",
+                    publicAdminApplication: "No serviço público, o planejamento se materializa no PPA.",
+                    traps: ["O PODC NÃO é sequencial — é cíclico."],
+                    commonErrors: ["Achar que o PODC é linear."],
+                    summary: "• PODC = Planejamento, Organização, Direção, Controle.",
+                    simpleExplanation: "Pense em um técnico de futebol.",
+                    moreExamples: ["Um diretor de escola planeja o ano letivo."],
+                    examFocus: "O PODC cai em QUASE TODAS as provas.",
                     activeRecovery: [
-                        { question: "O que significa PODC?", answer: "Planejamento, Organização, Direção e Controle." },
-                        { question: "Qual função define objetivos?", answer: "Planejamento." },
-                        { question: "O PODC é sequencial?", answer: "Não. É contínuo, simultâneo e cíclico." },
-                        { question: "Quem sistematizou as funções administrativas?", answer: "Henri Fayol (1916)." }
+                        { question: "O que significa PODC?", answer: "Planejamento, Organização, Direção e Controle." }
                     ]
                 },
                 "ADM-03": {
-                    objective: "Compreender o conceito de planejamento, seus níveis e elementos: objetivos, metas, planos e análise ambiental.",
+                    objective: "Compreender o conceito de planejamento, seus níveis e elementos.",
                     prerequisites: ["ADM-01", "ADM-02"],
-                    introduction: "Planejar é a primeira e mais importante função do administrador. Sem planejamento, a organização age no improviso.",
-                    detailed: "O <strong>Planejamento</strong> define objetivos e decide como alcançá-los.\n\n<strong>1. ESTRATÉGICO</strong>: Longo prazo, global, alta direção. Missão, visão, ambiente externo.\n<strong>2. TÁTICO</strong>: Médio prazo, departamental, gerência. Traduz a estratégia.\n<strong>3. OPERACIONAL</strong>: Curto prazo, tarefas, execução. Rotinas detalhadas.\n\n<strong>Elementos</strong>: Missão, Visão, Valores, Objetivos (gerais), Metas (específicas, mensuráveis, com prazo), Planos.\n\n<strong>Análise SWOT/FOFA</strong>: Forças e Fraquezas (internas); Oportunidades e Ameaças (externas).\n\n<strong>No setor público</strong>: PPA (estratégico, 4 anos), LDO (tático, anual), LOA (operacional, anual).",
-                    technical: "A análise SWOT permite formular estratégias que aproveitam oportunidades, neutralizam ameaças, potencializam forças e corrigem fraquezas.",
-                    examples: ["Estratégico: 'Tornar-se referência em atendimento até 2027.'", "Tático: 'Implantar sistema digital em 12 meses.'", "Operacional: 'Treinar servidores na próxima semana.'"],
+                    introduction: "Planejar é a primeira e mais importante função do administrador.",
+                    detailed: "O <strong>Planejamento</strong> define objetivos e decide como alcançá-los.",
+                    technical: "A análise SWOT permite formular estratégias.",
+                    examples: ["Estratégico: 'Tornar-se referência até 2027.'"],
                     comparisons: [
                         { concept: "Estratégico", definition: "Longo prazo, global.", focus: "Missão/Visão" },
-                        { concept: "Tático", definition: "Médio prazo, departamental.", focus: "Traduzir estratégia" },
-                        { concept: "Operacional", definition: "Curto prazo, tarefas.", focus: "Execução" }
+                        { concept: "Tático", definition: "Médio prazo, departamental.", focus: "Traduzir estratégia" }
                     ],
-                    publicAdminApplication: "PPA = Estratégico (4 anos). LDO = Tático (anual). LOA = Operacional (anual). Essa associação é MUITO cobrada!",
-                    traps: ["Não confundir OBJETIVO (geral) com META (específica, mensurável, com prazo).", "PPA, LDO, LOA = estratégico, tático, operacional.", "A análise SWOT não é exclusiva do estratégico, mas é mais usada nele."],
-                    commonErrors: ["Achar que planejamento estratégico é só 'pensar no futuro'.", "Confundir PPA, LDO e LOA.", "Esquecer que metas precisam ser MENSURÁVEIS."],
-                    summary: "• Planejamento = definir objetivos e como alcançá-los.\n• 3 Níveis: Estratégico, Tático, Operacional.\n• SWOT: Forças/Fraquezas (internas); Oportunidades/Ameaças (externas).\n• Público: PPA, LDO, LOA.",
-                    simpleExplanation: "Planejar é como planejar uma viagem. Primeiro decide ONDE chegar (estratégico). Depois QUAIS cidades visitar (tático). Por fim, organiza a mala e o horário (operacional).",
-                    moreExamples: ["Uma universidade tem a missão de formar cidadãos (estratégico). O departamento cria 3 novos cursos (tático). Cada professor prepara seu plano semanal (operacional)."],
-                    examFocus: "MUITO cobrado: 1) Diferenciar os 3 níveis. 2) PPA/LDO/LOA. 3) Objetivo vs Meta. 4) SWOT interno vs externo.",
+                    publicAdminApplication: "PPA = Estratégico (4 anos). LDO = Tático (anual). LOA = Operacional (anual).",
+                    traps: ["Não confundir OBJETIVO (geral) com META (específica)."],
+                    commonErrors: ["Confundir PPA, LDO e LOA."],
+                    summary: "• Planejamento = definir objetivos e como alcançá-los.",
+                    simpleExplanation: "Planejar é como planejar uma viagem.",
+                    moreExamples: ["Uma universidade tem a missão de formar cidadãos."],
+                    examFocus: "MUITO cobrado: 1) Diferenciar os 3 níveis. 2) PPA/LDO/LOA.",
                     activeRecovery: [
-                        { question: "Quais os 3 níveis de planejamento?", answer: "Estratégico, Tático e Operacional." },
-                        { question: "Diferença entre objetivo e meta?", answer: "Objetivo é geral. Meta é específica, mensurável e com prazo." },
-                        { question: "Na SWOT, o que é interno?", answer: "Forças e Fraquezas." },
-                        { question: "PPA, LDO, LOA correspondem a quais níveis?", answer: "PPA=Estratégico, LDO=Tático, LOA=Operacional." }
+                        { question: "Quais os 3 níveis de planejamento?", answer: "Estratégico, Tático e Operacional." }
                     ]
                 }
             },
-
-            /* =========================================
-               DIAGNÓSTICO (FASE 3)
-               4 tipos: multipla_escolha, verdadeiro_falso, situacao, autoavaliacao
-               ========================================= */
             diagnosis: {
                 "ADM-01": {
                     title: "Diagnóstico: Fundamentos da Administração",
-                    description: "Vamos descobrir o que você já sabe sobre os conceitos básicos da Administração. Não se preocupe em acertar tudo — o objetivo é identificar seus pontos fortes e o que precisa reforçar.",
+                    description: "Vamos descobrir o que você já sabe sobre os conceitos básicos.",
                     questions: [
-                        {
-                            id: "DIAG-ADM-01-001", type: "multipla_escolha", subtopic: "ADM-01.1",
-                            subtopicName: "Eficiência, Eficácia e Efetividade",
-                            statement: "Uma prefeitura conseguiu reduzir o custo de impressão em 40% ao adotar o sistema de impressão frente e verso. No entanto, a meta de digitalizar 1.000 processos no mês NÃO foi atingida. Nessa situação, a prefeitura foi:",
-                            alternatives: [
-                                { id: "A", text: "Eficaz, mas não eficiente." },
-                                { id: "B", text: "Eficiente, mas não eficaz." },
-                                { id: "C", text: "Eficiente e eficaz." },
-                                { id: "D", text: "Nem eficiente, nem eficaz." }
-                            ],
-                            answer: "B",
-                            explanation: "A prefeitura foi EFICIENTE (reduziu custos = bom uso dos recursos = meios), mas NÃO foi EFICAZ (não atingiu a meta de digitalização = fins). Lembre: eficiência = meios; eficácia = fins."
-                        },
-                        {
-                            id: "DIAG-ADM-01-002", type: "verdadeiro_falso", subtopic: "ADM-01.2",
-                            subtopicName: "Recursos Organizacionais",
-                            statement: "Os recursos organizacionais são classificados em quatro tipos: humanos, financeiros, materiais e tecnológicos.",
-                            answer: false,
-                            explanation: "FALSO. São CINCO tipos de recursos organizacionais: humanos, financeiros, materiais, tecnológicos E informacionais. As bancas costumam omitir os 'informacionais' para confundir."
-                        },
-                        {
-                            id: "DIAG-ADM-01-003", type: "situacao", subtopic: "ADM-01.3",
-                            subtopicName: "Níveis Hierárquicos",
-                            situation: "Você é servidor de uma secretaria estadual. O governador anuncia que, nos próximos 5 anos, o estado será referência em educação no Nordeste. Na semana seguinte, o secretário de educação define que cada escola deverá aumentar o IDEB em 1 ponto até o final do ano. O diretor da sua escola, então, organiza o horário de reforço escolar para os alunos com notas baixas.",
-                            statement: "Na situação acima, o governador, o secretário e o diretor atuam, respectivamente, nos níveis:",
-                            alternatives: [
-                                { id: "A", text: "Tático, operacional e estratégico." },
-                                { id: "B", text: "Estratégico, tático e operacional." },
-                                { id: "C", text: "Operacional, estratégico e tático." },
-                                { id: "D", text: "Estratégico, operacional e tático." }
-                            ],
-                            answer: "B",
-                            explanation: "O governador (alta direção, 5 anos, visão global) = ESTRATÉGICO. O secretário (médio escalão, 1 ano, departamental) = TÁTICO. O diretor (execução, curto prazo, tarefas) = OPERACIONAL."
-                        },
-                        {
-                            id: "DIAG-ADM-01-004", type: "verdadeiro_falso", subtopic: "ADM-01.1",
-                            subtopicName: "Conceito de Organização",
-                            statement: "Uma ONG que atua na proteção de animais é considerada uma organização, mesmo não tendo fins lucrativos.",
-                            answer: true,
-                            explanation: "VERDADEIRO. Organização é qualquer grupo de pessoas coordenado com metas comuns. ONGs são organizações do terceiro setor (sem fins lucrativos). Organização NÃO é sinônimo de empresa."
-                        },
-                        {
-                            id: "DIAG-ADM-01-005", type: "autoavaliacao", subtopic: "ADM-01.1",
-                            subtopicName: "Conceitos Gerais",
-                            statement: "Você já sabia a diferença entre eficiência, eficácia e efetividade antes de iniciar este diagnóstico?"
-                        },
-                        {
-                            id: "DIAG-ADM-01-006", type: "autoavaliacao", subtopic: "ADM-01.3",
-                            subtopicName: "Níveis Hierárquicos",
-                            statement: "Você já sabia identificar os três níveis hierárquicos de uma organização (estratégico, tático e operacional)?"
-                        }
+                        { id: "DIAG-ADM-01-001", type: "multipla_escolha", subtopic: "ADM-01.1", subtopicName: "Eficiência, Eficácia e Efetividade", statement: "Uma prefeitura reduziu custos mas não atingiu a meta. Foi:", alternatives: [{ id: "A", text: "Eficaz, mas não eficiente." }, { id: "B", text: "Eficiente, mas não eficaz." }, { id: "C", text: "Eficiente e eficaz." }, { id: "D", text: "Nem eficiente, nem eficaz." }], answer: "B", explanation: "Eficiente (reduziu custos) mas não eficaz (não atingiu meta)." },
+                        { id: "DIAG-ADM-01-002", type: "verdadeiro_falso", subtopic: "ADM-01.2", subtopicName: "Recursos Organizacionais", statement: "Os recursos são classificados em quatro tipos.", answer: false, explanation: "FALSO. São CINCO tipos: humanos, financeiros, materiais, tecnológicos E informacionais." },
+                        { id: "DIAG-ADM-01-003", type: "situacao", subtopic: "ADM-01.3", subtopicName: "Níveis Hierárquicos", situation: "Governador define meta de 5 anos. Secretário define meta anual. Diretor organiza tarefas diárias.", statement: "Governador, secretário e diretor atuam, respectivamente, nos níveis:", alternatives: [{ id: "A", text: "Tático, operacional e estratégico." }, { id: "B", text: "Estratégico, tático e operacional." }, { id: "C", text: "Operacional, estratégico e tático." }, { id: "D", text: "Estratégico, operacional e tático." }], answer: "B", explanation: "Governador = ESTRATÉGICO. Secretário = TÁTICO. Diretor = OPERACIONAL." },
+                        { id: "DIAG-ADM-01-004", type: "verdadeiro_falso", subtopic: "ADM-01.1", subtopicName: "Conceito de Organização", statement: "Uma ONG é considerada uma organização.", answer: true, explanation: "VERDADEIRO. ONGs são organizações do terceiro setor." },
+                        { id: "DIAG-ADM-01-005", type: "autoavaliacao", subtopic: "ADM-01.1", subtopicName: "Conceitos Gerais", statement: "Você já sabia a diferença entre eficiência e eficácia?" },
+                        { id: "DIAG-ADM-01-006", type: "autoavaliacao", subtopic: "ADM-01.3", subtopicName: "Níveis Hierárquicos", statement: "Você já sabia identificar os três níveis hierárquicos?" }
                     ]
                 },
                 "ADM-02": {
                     title: "Diagnóstico: Processo Administrativo (PODC)",
-                    description: "Vamos avaliar seu conhecimento sobre as quatro funções administrativas. Responda com sinceridade — não há nota, apenas diagnóstico.",
+                    description: "Vamos avaliar seu conhecimento sobre as quatro funções administrativas.",
                     questions: [
-                        {
-                            id: "DIAG-ADM-02-001", type: "multipla_escolha", subtopic: "ADM-02.1",
-                            subtopicName: "Funções do PODC",
-                            statement: "A função administrativa que consiste em monitorar os resultados alcançados e corrigir eventuais desvios em relação ao planejado é:",
-                            alternatives: [
-                                { id: "A", text: "Planejamento." },
-                                { id: "B", text: "Organização." },
-                                { id: "C", text: "Direção." },
-                                { id: "D", text: "Controle." }
-                            ],
-                            answer: "D",
-                            explanation: "O CONTROLE é a função que monitora resultados e corrige desvios. Palavra-chave: RESULTADOS e MONITORAMENTO. Planejamento = futuro; Organização = estrutura; Direção = pessoas."
-                        },
-                        {
-                            id: "DIAG-ADM-02-002", type: "verdadeiro_falso", subtopic: "ADM-02.1",
-                            subtopicName: "Natureza do PODC",
-                            statement: "As funções do PODC devem ser executadas obrigatoriamente em sequência: primeiro planeja, depois organiza, depois dirige e, por último, controla. Somente após concluir uma função é possível iniciar a seguinte.",
-                            answer: false,
-                            explanation: "FALSO. As funções do PODC são CONTÍNUAS, SIMULTÂNEAS e CÍCLICAS. Um administrador planeja, organiza, dirige e controla ao mesmo tempo, em ciclos constantes. Essa é uma das pegadinhas mais comuns em concursos."
-                        },
-                        {
-                            id: "DIAG-ADM-02-003", type: "situacao", subtopic: "ADM-02.1",
-                            subtopicName: "Aplicação do PODC",
-                            situation: "Maria é chefe de seção em um órgão público. Ela percebeu que a equipe está desmotivada e com muitos conflitos internos. Para resolver, ela reuniu o grupo, ouviu as reclamações, reconheceu o bom trabalho de cada um e estabeleceu metas claras para o próximo mês.",
-                            statement: "A ação de Maria está mais relacionada a qual função administrativa?",
-                            alternatives: [
-                                { id: "A", text: "Planejamento, pois definiu metas." },
-                                { id: "B", text: "Organização, pois estruturou a equipe." },
-                                { id: "C", text: "Direção, pois liderou e motivou a equipe." },
-                                { id: "D", text: "Controle, pois monitorou o desempenho." }
-                            ],
-                            answer: "C",
-                            explanation: "A ação de Maria é típica da DIREÇÃO: ela liderou (reuniu o grupo), motivou (reconheceu o bom trabalho) e comunicou (ouviu reclamações). Embora tenha definido metas (planejamento), o FOCO da ação foi conduzir PESSOAS, que é a essência da Direção."
-                        },
-                        {
-                            id: "DIAG-ADM-02-004", type: "multipla_escolha", subtopic: "ADM-02.1",
-                            subtopicName: "Origem do PODC",
-                            statement: "A sistematização das funções administrativas que deram origem ao PODC é atribuída a:",
-                            alternatives: [
-                                { id: "A", text: "Frederick Taylor." },
-                                { id: "B", text: "Henri Fayol." },
-                                { id: "C", text: "Max Weber." },
-                                { id: "D", text: "Elton Mayo." }
-                            ],
-                            answer: "B",
-                            explanation: "Henri FAYOL (1916) sistematizou as funções administrativas. Originalmente eram 5: Prever, Organizar, Comandar, Coordenar e Controlar. Taylor = Administração Científica. Weber = Burocracia. Mayo = Relações Humanas."
-                        },
-                        {
-                            id: "DIAG-ADM-02-005", type: "autoavaliacao", subtopic: "ADM-02.1",
-                            subtopicName: "Conceitos Gerais do PODC",
-                            statement: "Você já sabia o significado de cada função do PODC (Planejamento, Organização, Direção, Controle) antes deste diagnóstico?"
-                        }
+                        { id: "DIAG-ADM-02-001", type: "multipla_escolha", subtopic: "ADM-02.1", subtopicName: "Funções do PODC", statement: "A função que monitora resultados e corrige desvios é:", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "D", explanation: "O CONTROLE monitora resultados e corrige desvios." },
+                        { id: "DIAG-ADM-02-002", type: "verdadeiro_falso", subtopic: "ADM-02.1", subtopicName: "Natureza do PODC", statement: "As funções do PODC devem ser executadas em sequência.", answer: false, explanation: "FALSO. São CONTÍNUAS, SIMULTÂNEAS e CÍCLICAS." },
+                        { id: "DIAG-ADM-02-003", type: "situacao", subtopic: "ADM-02.1", subtopicName: "Aplicação do PODC", situation: "Maria reuniu a equipe, ouviu reclamações e motivou todos.", statement: "A ação de Maria está relacionada a qual função?", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "C", explanation: "Maria exerceu a DIREÇÃO: liderou e motivou pessoas." },
+                        { id: "DIAG-ADM-02-004", type: "multipla_escolha", subtopic: "ADM-02.1", subtopicName: "Origem do PODC", statement: "A sistematização do PODC é atribuída a:", alternatives: [{ id: "A", text: "Taylor." }, { id: "B", text: "Fayol." }, { id: "C", text: "Weber." }, { id: "D", text: "Mayo." }], answer: "B", explanation: "Henri FAYOL (1916) sistematizou as funções administrativas." },
+                        { id: "DIAG-ADM-02-005", type: "autoavaliacao", subtopic: "ADM-02.1", subtopicName: "Conceitos Gerais", statement: "Você já sabia o significado de cada função do PODC?" }
                     ]
                 },
                 "ADM-03": {
                     title: "Diagnóstico: Planejamento",
-                    description: "Vamos avaliar seu conhecimento sobre os níveis de planejamento, análise SWOT e instrumentos de planejamento público.",
+                    description: "Vamos avaliar seu conhecimento sobre planejamento.",
                     questions: [
-                        {
-                            id: "DIAG-ADM-03-001", type: "multipla_escolha", subtopic: "ADM-03.1",
-                            subtopicName: "Níveis de Planejamento",
-                            statement: "O planejamento que possui horizonte de longo prazo, abrange toda a organização e define missão, visão e objetivos globais é o:",
-                            alternatives: [
-                                { id: "A", text: "Operacional." },
-                                { id: "B", text: "Tático." },
-                                { id: "C", text: "Estratégico." },
-                                { id: "D", text: "Normativo." }
-                            ],
-                            answer: "C",
-                            explanation: "O planejamento ESTRATÉGICO é o de longo prazo, global, da alta direção. Operacional = curto prazo, tarefas. Tático = médio prazo, departamental. 'Normativo' não é um nível de planejamento."
-                        },
-                        {
-                            id: "DIAG-ADM-03-002", type: "verdadeiro_falso", subtopic: "ADM-03.2",
-                            subtopicName: "Objetivos e Metas",
-                            statement: "'Melhorar a qualidade do atendimento ao cidadão' é um exemplo de meta, pois é específico e mensurável.",
-                            answer: false,
-                            explanation: "FALSO. Isso é um OBJETIVO (geral, amplo). Para ser META, precisaria ser específico, mensurável e com prazo. Exemplo de meta: 'Reduzir o tempo de espera para 10 minutos até dezembro de 2025'."
-                        },
-                        {
-                            id: "DIAG-ADM-03-003", type: "situacao", subtopic: "ADM-03.3",
-                            subtopicName: "Planejamento Público",
-                            situation: "O Congresso Nacional aprovou um documento que estabelece as diretrizes, objetivos e metas da administração pública federal para os próximos 4 anos. Esse documento servirá de base para a elaboração das leis orçamentárias anuais.",
-                            statement: "O documento descrito na situação é:",
-                            alternatives: [
-                                { id: "A", text: "LOA (Lei Orçamentária Anual)." },
-                                { id: "B", text: "LDO (Lei de Diretrizes Orçamentárias)." },
-                                { id: "C", text: "PPA (Plano Plurianual)." },
-                                { id: "D", text: "Plano Diretor." }
-                            ],
-                            answer: "C",
-                            explanation: "O PPA (Plano Plurianual) tem horizonte de 4 anos e estabelece diretrizes, objetivos e metas. É o instrumento de planejamento ESTRATÉGICO do setor público. LDO = anual, diretrizes (tático). LOA = anual, orçamento (operacional)."
-                        },
-                        {
-                            id: "DIAG-ADM-03-004", type: "multipla_escolha", subtopic: "ADM-03.2",
-                            subtopicName: "Análise SWOT",
-                            statement: "Na análise SWOT (FOFA), as oportunidades e ameaças são classificadas como fatores:",
-                            alternatives: [
-                                { id: "A", text: "Internos e controláveis." },
-                                { id: "B", text: "Externos e não controláveis." },
-                                { id: "C", text: "Internos e não controláveis." },
-                                { id: "D", text: "Externos e controláveis." }
-                            ],
-                            answer: "B",
-                            explanation: "Oportunidades e Ameaças são fatores EXTERNOS e NÃO CONTROLÁVEIS (ex: mudanças na legislação, crise econômica, concorrência). Forças e Fraquezas são INTERNOS e CONTROLÁVEIS (ex: equipe qualificada, falta de recursos)."
-                        },
-                        {
-                            id: "DIAG-ADM-03-005", type: "autoavaliacao", subtopic: "ADM-03.1",
-                            subtopicName: "Níveis de Planejamento",
-                            statement: "Você já sabia a diferença entre planejamento estratégico, tático e operacional?"
-                        },
-                        {
-                            id: "DIAG-ADM-03-006", type: "autoavaliacao", subtopic: "ADM-03.3",
-                            subtopicName: "Planejamento Público",
-                            statement: "Você já conhecia a relação entre PPA, LDO e LOA antes deste diagnóstico?"
-                        }
+                        { id: "DIAG-ADM-03-001", type: "multipla_escolha", subtopic: "ADM-03.1", subtopicName: "Níveis de Planejamento", statement: "O planejamento de longo prazo, global, é o:", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: "O planejamento ESTRATÉGICO é de longo prazo e global." },
+                        { id: "DIAG-ADM-03-002", type: "verdadeiro_falso", subtopic: "ADM-03.2", subtopicName: "Objetivos e Metas", statement: "'Melhorar o atendimento' é um exemplo de meta.", answer: false, explanation: "FALSO. Isso é um OBJETIVO. Meta precisa ser específica e mensurável." },
+                        { id: "DIAG-ADM-03-003", type: "situacao", subtopic: "ADM-03.3", subtopicName: "Planejamento Público", situation: "Documento com diretrizes para 4 anos.", statement: "O documento é:", alternatives: [{ id: "A", text: "LOA." }, { id: "B", text: "LDO." }, { id: "C", text: "PPA." }, { id: "D", text: "Plano Diretor." }], answer: "C", explanation: "O PPA tem horizonte de 4 anos." },
+                        { id: "DIAG-ADM-03-004", type: "multipla_escolha", subtopic: "ADM-03.2", subtopicName: "Análise SWOT", statement: "Oportunidades e ameaças são fatores:", alternatives: [{ id: "A", text: "Internos." }, { id: "B", text: "Externos." }, { id: "C", text: "Controláveis." }, { id: "D", text: "Internos e controláveis." }], answer: "B", explanation: "Oportunidades e Ameaças são EXTERNOS." },
+                        { id: "DIAG-ADM-03-005", type: "autoavaliacao", subtopic: "ADM-03.1", subtopicName: "Níveis", statement: "Você já sabia a diferença entre os 3 níveis?" },
+                        { id: "DIAG-ADM-03-006", type: "autoavaliacao", subtopic: "ADM-03.3", subtopicName: "Planejamento Público", statement: "Você já conhecia PPA, LDO e LOA?" }
                     ]
                 }
             },
-
-            /* =========================================
-               QUESTÕES (FASE 2)
-               ========================================= */
             questions: [
-                { id: "Q-ADM-0001", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", statement: "Sobre os conceitos de eficiência, eficácia e efetividade, assinale a correta:", alternatives: [{ id: "A", text: "Eficiência refere-se ao alcance de objetivos, independentemente dos recursos." }, { id: "B", text: "Eficácia é a relação entre recursos utilizados e resultados alcançados." }, { id: "C", text: "Eficiência é fazer as coisas certas, enquanto eficácia é fazer as coisas da maneira correta." }, { id: "D", text: "Eficiência é fazer as coisas da maneira correta (uso racional de recursos), e eficácia é alcançar os objetivos propostos." }], answer: "D", explanation: { correct: "Eficiência = meios. Eficácia = fins.", wrong: { A: "Isso descreve eficácia.", B: "Isso descreve eficiência.", C: "Inverteu os conceitos." }, concept: "3 Es.", trap: "Inversão de definições.", examTip: "Eficiência = meios; Eficácia = fins." } },
-                { id: "Q-ADM-0002", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", statement: "Os recursos humanos, financeiros, materiais, tecnológicos e informacionais são classificados como:", alternatives: [{ id: "A", text: "Níveis organizacionais." }, { id: "B", text: "Funções administrativas." }, { id: "C", text: "Recursos organizacionais." }, { id: "D", text: "Princípios da Administração." }], answer: "C", explanation: { correct: "São os 5 tipos de recursos organizacionais.", wrong: { A: "Níveis = estratégico, tático, operacional.", B: "Funções = PODC.", D: "Princípios = LIMPE." }, concept: "Recursos organizacionais.", trap: "Confundir com funções ou níveis.", examTip: "Decore os 5 recursos." } },
-                { id: "Q-ADM-0003", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "A função administrativa que consiste em distribuir tarefas, recursos e responsabilidades é:", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "B", explanation: { correct: "Organização = estrutura e distribuição.", wrong: { A: "Planejamento = objetivos.", C: "Direção = pessoas.", D: "Controle = resultados." }, concept: "PODC.", trap: "Reconhecer pela definição.", examTip: "Organização = ESTRUTURA." } },
-                { id: "Q-ADM-0004", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", statement: "No setor público brasileiro, o PPA corresponde a qual nível de planejamento?", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: { correct: "PPA = Estratégico (4 anos).", wrong: { A: "LOA = operacional.", B: "LDO = tático.", D: "Não existe." }, concept: "PPA/LDO/LOA.", trap: "Inverter a ordem.", examTip: "PPA=Estratégico, LDO=Tático, LOA=Operacional." } },
-                { id: "Q-DA-0001", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio que exige imparcialidade e vedação à promoção pessoal é:", alternatives: [{ id: "A", text: "Legalidade" }, { id: "B", text: "Impessoalidade" }, { id: "C", text: "Publicidade" }, { id: "D", text: "Eficiência" }], answer: "B", explanation: { correct: "Impessoalidade = neutralidade, vedação à promoção pessoal.", wrong: { A: "Legalidade = subordinação à lei.", C: "Publicidade = transparência.", D: "Eficiência = desempenho." }, concept: "LIMPE.", trap: "Confundir com moralidade.", examTip: "LIMPE: Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência." } }
+                { id: "Q-ADM-0001", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", statement: "Sobre eficiência, eficácia e efetividade, assinale a correta:", alternatives: [{ id: "A", text: "Eficiência refere-se ao alcance de objetivos." }, { id: "B", text: "Eficácia é a relação entre recursos e resultados." }, { id: "C", text: "Eficiência é fazer as coisas certas." }, { id: "D", text: "Eficiência é fazer da maneira correta, e eficácia é alcançar objetivos." }], answer: "D", explanation: { correct: "Eficiência = meios. Eficácia = fins.", wrong: { A: "Isso descreve eficácia.", B: "Isso descreve eficiência.", C: "Inverteu os conceitos." }, concept: "3 Es.", trap: "Inversão de definições.", examTip: "Eficiência = meios; Eficácia = fins." } },
+                { id: "Q-ADM-0002", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", statement: "Os recursos humanos, financeiros, materiais, tecnológicos e informacionais são:", alternatives: [{ id: "A", text: "Níveis organizacionais." }, { id: "B", text: "Funções administrativas." }, { id: "C", text: "Recursos organizacionais." }, { id: "D", text: "Princípios da Administração." }], answer: "C", explanation: { correct: "São os 5 tipos de recursos organizacionais.", wrong: { A: "Níveis = estratégico, tático, operacional.", B: "Funções = PODC.", D: "Princípios = LIMPE." }, concept: "Recursos organizacionais.", trap: "Confundir com funções ou níveis.", examTip: "Decore os 5 recursos." } },
+                { id: "Q-ADM-0003", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "A função que distribui tarefas e recursos é:", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "B", explanation: { correct: "Organização = estrutura e distribuição.", wrong: { A: "Planejamento = objetivos.", C: "Direção = pessoas.", D: "Controle = resultados." }, concept: "PODC.", trap: "Reconhecer pela definição.", examTip: "Organização = ESTRUTURA." } },
+                { id: "Q-ADM-0004", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", statement: "O PPA corresponde a qual nível de planejamento?", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: { correct: "PPA = Estratégico (4 anos).", wrong: { A: "LOA = operacional.", B: "LDO = tático.", D: "Não existe." }, concept: "PPA/LDO/LOA.", trap: "Inverter a ordem.", examTip: "PPA=Estratégico, LDO=Tático, LOA=Operacional." } },
+                { id: "Q-DA-0001", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio que exige imparcialidade é:", alternatives: [{ id: "A", text: "Legalidade" }, { id: "B", text: "Impessoalidade" }, { id: "C", text: "Publicidade" }, { id: "D", text: "Eficiência" }], answer: "B", explanation: { correct: "Impessoalidade = neutralidade.", wrong: { A: "Legalidade = subordinação à lei.", C: "Publicidade = transparência.", D: "Eficiência = desempenho." }, concept: "LIMPE.", trap: "Confundir com moralidade.", examTip: "LIMPE: Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência." } }
             ],
-
             flashcards: [
                 { id: "F-ADM-0001", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficiência?", back: "Foco nos MEIOS. Fazer mais com menos recursos." },
                 { id: "F-ADM-0002", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficácia?", back: "Foco nos FINS. Alcançar os objetivos propostos." },
@@ -586,9 +410,6 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
             ]
         };
 
-        /* =========================================
-           2. CAMADA DE ARMAZENAMENTO (STORAGE)
-           ========================================= */
         const Storage = {
             KEY_STATE: "admin-dir:state:v1",
             load() {
@@ -598,7 +419,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
             },
             save(state) {
                 try { localStorage.setItem(this.KEY_STATE, JSON.stringify(state)); }
-                catch (e) { console.error("Erro ao salvar:", e); UI.toast("Erro ao salvar. Armazenamento cheio?"); }
+                catch (e) { console.error("Erro ao salvar:", e); UI.toast("Erro ao salvar."); }
             },
             exportData(state) {
                 const a = document.createElement('a');
@@ -612,7 +433,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 reader.onload = (e) => {
                     try {
                         const imp = JSON.parse(e.target.result);
-                        if (imp && imp.version) { Storage.save(imp); UI.toast("Importado! Recarregando..."); setTimeout(() => location.reload(), 1500); }
+                        if (imp && imp.version) { Storage.save(imp); UI.toast("Importado!"); setTimeout(() => location.reload(), 1500); }
                         else throw new Error("Inválido");
                     } catch (err) { UI.toast("Arquivo inválido."); }
                 };
@@ -620,13 +441,10 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
             }
         };
 
-        /* =========================================
-           3. CAMADA DE ESTADO (STATE)
-           ========================================= */
         let AppState = {
-            version: "0.3", schema: 1,
+            version: "0.4", schema: 1,
             createdAt: new Date().toISOString(), lastAccess: new Date().toISOString(),
-            progress: { modules: {}, questionsAnswered: 0, questionsCorrect: 0 },
+            progress: { modules: {}, questionsAnswered: 0, questionsCorrect: 0, questionLog: [] },
             errors: {}, reviews: {},
             diagnosis: {},
             settings: { theme: "light", dailyGoal: 20 }
@@ -644,7 +462,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
             reset() {
                 if (confirm("ATENÇÃO: Isso apagará TODO o seu progresso.\n\nDeseja continuar?")) {
                     localStorage.removeItem(Storage.KEY_STATE);
-                    UI.toast("Resetado. Recarregando...");
+                    UI.toast("Resetado.");
                     setTimeout(() => location.reload(), 1000);
                 }
             },
@@ -670,12 +488,59 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 AppState.progress.modules[moduleId].diagnosisDone = true;
                 AppState.progress.modules[moduleId].status = "em_andamento";
                 State.save();
+            },
+            recordQuestionAnswer(questionId, userAnswer, correct, context = 'quiz') {
+                const logEntry = {
+                    questionId: questionId,
+                    userAnswer: userAnswer,
+                    correct: correct,
+                    timestamp: new Date().toISOString(),
+                    context: context
+                };
+                AppState.progress.questionLog.push(logEntry);
+                AppState.progress.questionsAnswered++;
+                if (correct) AppState.progress.questionsCorrect++;
+
+                const question = Data.questions.find(q => q.id === questionId);
+                if (question && question.moduleId) {
+                    if (!AppState.progress.modules[question.moduleId]) {
+                        AppState.progress.modules[question.moduleId] = { status: "em_andamento", diagnosisDone: false, lessonViewed: false, questionsAnswered: 0, questionsCorrect: 0, flashcardsStudied: 0, lastAccess: "" };
+                    }
+                    AppState.progress.modules[question.moduleId].questionsAnswered++;
+                    if (correct) AppState.progress.modules[question.moduleId].questionsCorrect++;
+                    AppState.progress.modules[question.moduleId].lastAccess = new Date().toISOString();
+                }
+
+                if (!correct && question) {
+                    if (!AppState.errors[questionId]) {
+                        AppState.errors[questionId] = {
+                            questionId: questionId,
+                            userAnswer: userAnswer,
+                            correctAnswer: question.answer,
+                            count: 1,
+                            lastAttempt: new Date().toISOString(),
+                            nextReview: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+                            resolved: false
+                        };
+                    } else {
+                        AppState.errors[questionId].count++;
+                        AppState.errors[questionId].lastAttempt = new Date().toISOString();
+                        AppState.errors[questionId].nextReview = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString();
+                    }
+
+                    AppState.reviews[questionId] = {
+                        type: "error",
+                        itemId: questionId,
+                        intervalLevel: 1,
+                        nextReview: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+                        easeFactor: 2.0
+                    };
+                }
+
+                State.save();
             }
         };
 
-        /* =========================================
-           4. CAMADA DE INTERFACE (UI)
-           ========================================= */
         const UI = {
             toast(msg) {
                 const el = document.getElementById('toast');
@@ -685,7 +550,6 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
             getPriorityBadge(p) {
                 return { 'alta': '<span class="badge badge-alta">Alta</span>', 'media': '<span class="badge badge-media">Média</span>', 'baixa': '<span class="badge badge-baixa">Baixa</span>' }[p] || '';
             },
-
             renderDashboard() {
                 const total = Data.modules.length;
                 const studied = Object.keys(AppState.progress.modules).length;
@@ -702,9 +566,8 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                         </div>
                         <button class="btn btn-primary" onclick="Router.navigate('modules')">Continuar Estudando</button>
                     </div>
-                    <div class="card"><h3>🚧 Fase 3</h3><p style="font-size:0.9rem;color:var(--text-muted);">Diagnóstico inicial ativo para ADM-01, ADM-02 e ADM-03.</p></div>`;
+                    <div class="card"><h3>🚧 Fase 4</h3><p style="font-size:0.9rem;color:var(--text-muted);">Motor de questões ativo. Caderno de erros e revisão espaçada funcionando.</p></div>`;
             },
-
             renderModules() {
                 let html = `<div class="card"><h2>📚 Módulos</h2>`;
                 Data.modules.forEach(mod => {
@@ -720,13 +583,13 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 });
                 return html + `</div>`;
             },
-
             renderTopic(moduleId) {
                 const mod = Data.modules.find(m => m.id === moduleId);
                 if (!mod) return `<div class="card"><h2>Não encontrado</h2></div>`;
                 const hasLesson = Data.lessons[moduleId];
                 const hasDiag = Data.diagnosis[moduleId];
                 const diagDone = AppState.diagnosis[moduleId];
+                const moduleQuestions = Data.questions.filter(q => q.moduleId === moduleId);
                 return `
                     <div class="card">
                         <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('modules')">← Voltar</button>
@@ -736,11 +599,10 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                         <div style="display:flex;flex-direction:column;gap:0.5rem;">
                             ${hasDiag ? `<button class="btn ${diagDone ? 'btn-outline' : 'btn-primary'}" onclick="Router.navigate('diagnosis','${moduleId}')">${diagDone ? '🔄 Refazer Diagnóstico' : '📝 Fazer Diagnóstico Inicial'}</button>` : ''}
                             ${hasLesson ? `<button class="btn btn-outline" onclick="Router.navigate('lesson','${moduleId}')">📖 Ler Aula Teórica</button>` : ''}
-                            <button class="btn btn-outline" onclick="UI.toast('Fase 4')">⚔️ Praticar Questões</button>
+                            ${moduleQuestions.length > 0 ? `<button class="btn btn-primary" onclick="Router.navigate('quiz','${moduleId}')">⚔️ Praticar Questões (${moduleQuestions.length})</button>` : `<button class="btn btn-outline" disabled>⚔️ Questões em desenvolvimento</button>`}
                         </div>
                     </div>`;
             },
-
             renderLesson(moduleId) {
                 const mod = Data.modules.find(m => m.id === moduleId);
                 const lesson = Data.lessons[moduleId];
@@ -768,38 +630,28 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                         <div class="lesson-section"><h3>🧠 Recuperação Ativa</h3>${lesson.activeRecovery.map((r,i)=>`<div class="recovery-card"><div class="recovery-question">${i+1}. ${r.question}</div><button class="recovery-btn" onclick="UI.toggleRecovery('rc-${moduleId}-${i}',this)">Revelar</button><div id="rc-${moduleId}-${i}" class="recovery-answer">${r.answer}</div></div>`).join('')}</div>
                     </div>`;
             },
-
-            /* =========================================
-               DIAGNÓSTICO (FASE 3)
-               ========================================= */
-            diagState: { moduleId: null, step: 0, answers: {}, showingFeedback: false },
-
             renderDiagnosis(moduleId) {
                 const diag = Data.diagnosis[moduleId];
                 if (!diag) return `<div class="card"><h2>Diagnóstico não disponível</h2></div>`;
-
                 UI.diagState.moduleId = moduleId;
                 UI.diagState.step = 0;
                 UI.diagState.answers = {};
                 UI.diagState.showingFeedback = false;
-
                 return `
                     <div class="card">
-                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar ao Módulo</button>
+                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
                         <h2>📝 ${diag.title}</h2>
                         <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">${diag.description}</p>
-                        <p style="font-size:0.85rem;color:var(--text-muted);">Total de perguntas: <strong>${diag.questions.length}</strong></p>
+                        <p style="font-size:0.85rem;color:var(--text-muted);">Total: <strong>${diag.questions.length}</strong></p>
                         <button class="btn btn-primary" onclick="UI.startDiagnosis()">Iniciar Diagnóstico</button>
                     </div>`;
             },
-
             startDiagnosis() {
                 UI.diagState.step = 0;
                 UI.diagState.answers = {};
                 UI.diagState.showingFeedback = false;
                 UI.renderDiagQuestion();
             },
-
             renderDiagQuestion() {
                 const moduleId = UI.diagState.moduleId;
                 const diag = Data.diagnosis[moduleId];
@@ -807,243 +659,223 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 const total = diag.questions.length;
                 const step = UI.diagState.step + 1;
                 const pct = Math.round((UI.diagState.step / total) * 100);
-
                 UI.diagState.showingFeedback = false;
-
-                const typeLabels = {
-                    'multipla_escolha': '<span class="diag-type-badge diag-type-multipla">Múltipla Escolha</span>',
-                    'verdadeiro_falso': '<span class="diag-type-badge diag-type-vf">Verdadeiro ou Falso</span>',
-                    'situacao': '<span class="diag-type-badge diag-type-situacao">Situação Prática</span>',
-                    'autoavaliacao': '<span class="diag-type-badge diag-type-auto">Autoavaliação</span>'
-                };
-
+                const typeLabels = { 'multipla_escolha': '<span class="diag-type-badge diag-type-multipla">Múltipla Escolha</span>', 'verdadeiro_falso': '<span class="diag-type-badge diag-type-vf">Verdadeiro ou Falso</span>', 'situacao': '<span class="diag-type-badge diag-type-situacao">Situação Prática</span>', 'autoavaliacao': '<span class="diag-type-badge diag-type-auto">Autoavaliação</span>' };
                 let questionHtml = '';
-
                 if (q.type === 'multipla_escolha' || q.type === 'situacao') {
-                    questionHtml = `
-                        ${q.situation ? `<div class="diag-situation-context">📋 ${q.situation}</div>` : ''}
-                        <div class="diag-question-text">${q.statement}</div>
-                        <div class="diag-alternatives" id="diag-alts">
-                            ${q.alternatives.map(a => `
-                                <button class="diag-alt-btn" data-id="${a.id}" onclick="UI.selectDiagAlt('${a.id}')">
-                                    <span class="diag-alt-letter">${a.id}</span>
-                                    <span>${a.text}</span>
-                                </button>
-                            `).join('')}
-                        </div>
-                        <div id="diag-feedback" class="diag-feedback"></div>
-                        <button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">
-                            ${step < total ? 'Próxima Pergunta →' : 'Ver Resultado →'}
-                        </button>
-                    `;
+                    questionHtml = `${q.situation ? `<div class="diag-situation-context">📋 ${q.situation}</div>` : ''}<div class="diag-question-text">${q.statement}</div><div class="diag-alternatives" id="diag-alts">${q.alternatives.map(a => `<button class="diag-alt-btn" data-id="${a.id}" onclick="UI.selectDiagAlt('${a.id}')"><span class="diag-alt-letter">${a.id}</span><span>${a.text}</span></button>`).join('')}</div><div id="diag-feedback" class="diag-feedback"></div><button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">${step < total ? 'Próxima →' : 'Ver Resultado →'}</button>`;
                 } else if (q.type === 'verdadeiro_falso') {
-                    questionHtml = `
-                        <div class="diag-question-text">${q.statement}</div>
-                        <div class="diag-vf-buttons" id="diag-vf-btns">
-                            <button class="diag-vf-btn" data-val="true" onclick="UI.selectDiagVF(true)">✅ VERDADEIRO</button>
-                            <button class="diag-vf-btn" data-val="false" onclick="UI.selectDiagVF(false)">❌ FALSO</button>
-                        </div>
-                        <div id="diag-feedback" class="diag-feedback"></div>
-                        <button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">
-                            ${step < total ? 'Próxima Pergunta →' : 'Ver Resultado →'}
-                        </button>
-                    `;
+                    questionHtml = `<div class="diag-question-text">${q.statement}</div><div class="diag-vf-buttons" id="diag-vf-btns"><button class="diag-vf-btn" data-val="true" onclick="UI.selectDiagVF(true)">✅ VERDADEIRO</button><button class="diag-vf-btn" data-val="false" onclick="UI.selectDiagVF(false)">❌ FALSO</button></div><div id="diag-feedback" class="diag-feedback"></div><button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">${step < total ? 'Próxima →' : 'Ver Resultado →'}</button>`;
                 } else if (q.type === 'autoavaliacao') {
-                    questionHtml = `
-                        <div class="diag-question-text">${q.statement}</div>
-                        <div class="diag-auto-buttons" id="diag-auto-btns">
-                            <button class="diag-auto-btn" onclick="UI.selectDiagAuto(true)">✅ Eu já sabia</button>
-                            <button class="diag-auto-btn" onclick="UI.selectDiagAuto(false)">❌ Eu não sabia</button>
-                        </div>
-                        <button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">
-                            ${step < total ? 'Próxima Pergunta →' : 'Ver Resultado →'}
-                        </button>
-                    `;
+                    questionHtml = `<div class="diag-question-text">${q.statement}</div><div class="diag-auto-buttons" id="diag-auto-btns"><button class="diag-auto-btn" onclick="UI.selectDiagAuto(true)">✅ Eu já sabia</button><button class="diag-auto-btn" onclick="UI.selectDiagAuto(false)">❌ Eu não sabia</button></div><button id="diag-next-btn" class="btn btn-primary hidden" style="margin-top:1rem;" onclick="UI.nextDiagStep()">${step < total ? 'Próxima →' : 'Ver Resultado →'}</button>`;
                 }
-
-                document.getElementById('app-container').innerHTML = `
-                    <div class="card">
-                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Sair do Diagnóstico</button>
-                        <div class="diag-progress-bar"><div class="diag-progress-fill" style="width:${pct}%"></div></div>
-                        <div class="diag-step-info">Pergunta ${step} de ${total} • ${q.subtopicName}</div>
-                        ${typeLabels[q.type]}
-                        ${questionHtml}
-                    </div>`;
+                document.getElementById('app-container').innerHTML = `<div class="card"><button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Sair</button><div class="diag-progress-bar"><div class="diag-progress-fill" style="width:${pct}%"></div></div><div class="diag-step-info">Pergunta ${step} de ${total} • ${q.subtopicName}</div>${typeLabels[q.type]}${questionHtml}</div>`;
             },
-
             selectDiagAlt(altId) {
                 if (UI.diagState.showingFeedback) return;
                 UI.diagState.showingFeedback = true;
-
                 const moduleId = UI.diagState.moduleId;
                 const q = Data.diagnosis[moduleId].questions[UI.diagState.step];
                 const isCorrect = altId === q.answer;
-
                 UI.diagState.answers[q.id] = { type: q.type, subtopic: q.subtopic, correct: isCorrect, userAnswer: altId };
-
-                document.querySelectorAll('.diag-alt-btn').forEach(btn => {
-                    btn.style.pointerEvents = 'none';
-                    if (btn.dataset.id === q.answer) btn.classList.add('correct');
-                    else if (btn.dataset.id === altId && !isCorrect) btn.classList.add('wrong');
-                });
-
+                document.querySelectorAll('.diag-alt-btn').forEach(btn => { btn.style.pointerEvents = 'none'; if (btn.dataset.id === q.answer) btn.classList.add('correct'); else if (btn.dataset.id === altId && !isCorrect) btn.classList.add('wrong'); });
                 const fb = document.getElementById('diag-feedback');
                 fb.className = `diag-feedback visible ${isCorrect ? 'correct' : 'wrong'}`;
                 fb.innerHTML = `<strong>${isCorrect ? '✅ Acertou!' : '❌ Errou.'}</strong><br>${q.explanation}`;
                 document.getElementById('diag-next-btn').classList.remove('hidden');
             },
-
             selectDiagVF(val) {
                 if (UI.diagState.showingFeedback) return;
                 UI.diagState.showingFeedback = true;
-
                 const moduleId = UI.diagState.moduleId;
                 const q = Data.diagnosis[moduleId].questions[UI.diagState.step];
                 const isCorrect = val === q.answer;
-
                 UI.diagState.answers[q.id] = { type: q.type, subtopic: q.subtopic, correct: isCorrect, userAnswer: val };
-
-                document.querySelectorAll('.diag-vf-btn').forEach(btn => {
-                    btn.style.pointerEvents = 'none';
-                    const btnVal = btn.dataset.val === 'true';
-                    if (btnVal === q.answer) btn.classList.add('correct');
-                    else if (btnVal === val && !isCorrect) btn.classList.add('wrong');
-                });
-
+                document.querySelectorAll('.diag-vf-btn').forEach(btn => { btn.style.pointerEvents = 'none'; const btnVal = btn.dataset.val === 'true'; if (btnVal === q.answer) btn.classList.add('correct'); else if (btnVal === val && !isCorrect) btn.classList.add('wrong'); });
                 const fb = document.getElementById('diag-feedback');
                 fb.className = `diag-feedback visible ${isCorrect ? 'correct' : 'wrong'}`;
                 fb.innerHTML = `<strong>${isCorrect ? '✅ Acertou!' : '❌ Errou.'}</strong><br>${q.explanation}`;
                 document.getElementById('diag-next-btn').classList.remove('hidden');
             },
-
             selectDiagAuto(knew) {
                 const moduleId = UI.diagState.moduleId;
                 const q = Data.diagnosis[moduleId].questions[UI.diagState.step];
-
                 UI.diagState.answers[q.id] = { type: q.type, subtopic: q.subtopic, correct: null, selfKnown: knew };
-
-                document.querySelectorAll('.diag-auto-btn').forEach(btn => {
-                    btn.style.pointerEvents = 'none';
-                });
+                document.querySelectorAll('.diag-auto-btn').forEach(btn => { btn.style.pointerEvents = 'none'; });
                 event.target.classList.add('selected');
-
                 document.getElementById('diag-next-btn').classList.remove('hidden');
             },
-
             nextDiagStep() {
                 const moduleId = UI.diagState.moduleId;
                 const diag = Data.diagnosis[moduleId];
                 UI.diagState.step++;
-
-                if (UI.diagState.step >= diag.questions.length) {
-                    UI.renderDiagResult();
-                } else {
-                    UI.renderDiagQuestion();
-                }
+                if (UI.diagState.step >= diag.questions.length) { UI.renderDiagResult(); } else { UI.renderDiagQuestion(); }
             },
-
             renderDiagResult() {
                 const moduleId = UI.diagState.moduleId;
                 const diag = Data.diagnosis[moduleId];
                 const answers = UI.diagState.answers;
-
-                // Análise por subtema
                 const subtopics = {};
                 let totalObjective = 0, correctObjective = 0, totalSelfKnown = 0, selfKnownCount = 0;
-
                 Object.values(answers).forEach(a => {
-                    if (!subtopics[a.subtopic]) {
-                        const q = diag.questions.find(qq => qq.subtopic === a.subtopic);
-                        subtopics[a.subtopic] = { name: q ? q.subtopicName : a.subtopic, total: 0, correct: 0, selfKnown: 0, selfTotal: 0 };
-                    }
+                    if (!subtopics[a.subtopic]) { const q = diag.questions.find(qq => qq.subtopic === a.subtopic); subtopics[a.subtopic] = { name: q ? q.subtopicName : a.subtopic, total: 0, correct: 0, selfKnown: 0, selfTotal: 0 }; }
                     const st = subtopics[a.subtopic];
-                    if (a.type === 'autoavaliacao') {
-                        st.selfTotal++;
-                        if (a.selfKnown) { st.selfKnown++; selfKnownCount++; }
-                        totalSelfKnown++;
-                    } else {
-                        st.total++;
-                        totalObjective++;
-                        if (a.correct) { st.correct++; correctObjective++; }
-                    }
+                    if (a.type === 'autoavaliacao') { st.selfTotal++; if (a.selfKnown) { st.selfKnown++; selfKnownCount++; } totalSelfKnown++; } else { st.total++; totalObjective++; if (a.correct) { st.correct++; correctObjective++; } }
                 });
-
                 const pct = totalObjective > 0 ? Math.round((correctObjective / totalObjective) * 100) : 0;
-                const strengths = [];
-                const weaknesses = [];
-
-                Object.entries(subtopics).forEach(([key, st]) => {
-                    const stPct = st.total > 0 ? (st.correct / st.total) * 100 : (st.selfKnown > 0 ? 100 : 50);
-                    if (stPct >= 75) strengths.push(st.name);
-                    else if (stPct < 50) weaknesses.push(st.name);
-                });
-
+                const strengths = []; const weaknesses = [];
+                Object.entries(subtopics).forEach(([key, st]) => { const stPct = st.total > 0 ? (st.correct / st.total) * 100 : (st.selfKnown > 0 ? 100 : 50); if (stPct >= 75) strengths.push(st.name); else if (stPct < 50) weaknesses.push(st.name); });
                 let recommendation = '';
-                if (pct >= 80 && weaknesses.length === 0) {
-                    recommendation = '🟢 Excelente! Você já tem uma boa base neste módulo. Pode avançar para a aula teórica para aprofundar e depois partir para as questões.';
-                } else if (pct >= 50) {
-                    recommendation = '🟡 Bom começo! Você tem alguns conhecimentos, mas há pontos a reforçar. Recomendamos estudar a aula teórica com atenção nos tópicos identificados como fracos.';
-                } else {
-                    recommendation = '🔴 Este módulo precisa de atenção. Não se preocupe — é para isso que o diagnóstico existe! Estude a aula teórica do início ao fim, use a recuperação ativa e depois refaça o diagnóstico.';
-                }
-
-                // Salvar no estado
+                if (pct >= 80 && weaknesses.length === 0) { recommendation = '🟢 Excelente! Pode avançar para a aula.'; } else if (pct >= 50) { recommendation = '🟡 Bom começo! Reforce os pontos fracos.'; } else { recommendation = '🔴 Este módulo precisa de atenção. Estude a aula teórica.'; }
                 State.saveDiagnosis(moduleId, subtopics, strengths, weaknesses, recommendation);
-
                 const scoreClass = pct >= 75 ? 'diag-score-good' : pct >= 50 ? 'diag-score-medium' : 'diag-score-bad';
-
-                let html = `
-                    <div class="card">
-                        <h2>📊 Resultado do Diagnóstico</h2>
-                        <p style="color:var(--text-muted);font-size:0.9rem;">${diag.title}</p>
-                    </div>
-                    <div class="diag-result-card">
-                        <div class="diag-result-header">
-                            <div>
-                                <div style="font-size:0.85rem;color:var(--text-muted);">Desempenho nas questões objetivas</div>
-                                <div style="font-size:1.5rem;font-weight:700;">${correctObjective}/${totalObjective} (${pct}%)</div>
-                            </div>
-                            <div class="diag-score-circle ${scoreClass}">${pct}%</div>
-                        </div>
-                        ${totalSelfKnown > 0 ? `<div style="font-size:0.85rem;color:var(--text-muted);margin-top:0.5rem;">Autoavaliação: você já conhecia ${selfKnownCount} de ${totalSelfKnown} tópicos.</div>` : ''}
-                    </div>
-                    <div class="diag-result-card">
-                        <h3 style="margin-bottom:0.75rem;">Desempenho por Subtema</h3>
-                        ${Object.entries(subtopics).map(([key, st]) => {
-                            const stPct = st.total > 0 ? Math.round((st.correct / st.total) * 100) : (st.selfTotal > 0 ? Math.round((st.selfKnown / st.selfTotal) * 100) : 0);
-                            const barColor = stPct >= 75 ? 'var(--success)' : stPct >= 50 ? 'var(--warning)' : 'var(--danger)';
-                            const label = st.total > 0 ? `${st.correct}/${st.total}` : (st.selfTotal > 0 ? (st.selfKnown > 0 ? 'Sabia' : 'Não sabia') : '-');
-                            return `<div class="diag-subtopic-bar">
-                                <span class="diag-subtopic-label">${st.name}</span>
-                                <div class="bar-bg"><div class="bar-fill" style="width:${stPct}%;background:${barColor}"></div></div>
-                                <span class="diag-subtopic-value">${label}</span>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                    <div class="diag-result-card">
-                        <h3 style="margin-bottom:0.75rem;">Pontos Fortes e Fracos</h3>
-                        <div style="margin-bottom:0.5rem;">
-                            <strong style="color:var(--success);">✅ Fortes:</strong>
-                            ${strengths.length > 0 ? strengths.map(s => `<span class="diag-tag diag-tag-strength">${s}</span>`).join('') : '<span class="diag-tag diag-tag-neutral">Nenhum identificado ainda</span>'}
-                        </div>
-                        <div>
-                            <strong style="color:var(--danger);">⚠️ Fracos:</strong>
-                            ${weaknesses.length > 0 ? weaknesses.map(w => `<span class="diag-tag diag-tag-weakness">${w}</span>`).join('') : '<span class="diag-tag diag-tag-neutral">Nenhum — ótimo!</span>'}
-                        </div>
-                    </div>
-                    <div class="diag-result-card">
-                        <h3 style="margin-bottom:0.75rem;">💡 Recomendação</h3>
-                        <p style="font-size:0.95rem;">${recommendation}</p>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-                        <button class="btn btn-outline" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
-                        <button class="btn btn-primary" onclick="Router.navigate('lesson','${moduleId}')">📖 Ir para a Aula</button>
-                    </div>`;
-
+                let html = `<div class="card"><h2>📊 Resultado do Diagnóstico</h2><p style="color:var(--text-muted);font-size:0.9rem;">${diag.title}</p></div><div class="diag-result-card"><div class="diag-result-header"><div><div style="font-size:0.85rem;color:var(--text-muted);">Desempenho</div><div style="font-size:1.5rem;font-weight:700;">${correctObjective}/${totalObjective} (${pct}%)</div></div><div class="diag-score-circle ${scoreClass}">${pct}%</div></div></div><div class="diag-result-card"><h3 style="margin-bottom:0.75rem;">💡 Recomendação</h3><p style="font-size:0.95rem;">${recommendation}</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;"><button class="btn btn-outline" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button><button class="btn btn-primary" onclick="Router.navigate('lesson','${moduleId}')">📖 Ir para a Aula</button></div>`;
                 document.getElementById('app-container').innerHTML = html;
                 window.scrollTo(0, 0);
             },
-
+            quizState: { moduleId: null, questions: [], currentIndex: 0, answered: false },
+            renderQuiz(moduleId) {
+                const mod = Data.modules.find(m => m.id === moduleId);
+                if (!mod) return `<div class="card"><h2>Módulo não encontrado</h2></div>`;
+                const moduleQuestions = Data.questions.filter(q => q.moduleId === moduleId);
+                if (moduleQuestions.length === 0) {
+                    return `<div class="card">
+                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
+                        <h2>⚔️ Questões — ${mod.title}</h2>
+                        <div class="quiz-empty">
+                            <div class="quiz-empty-icon">📝</div>
+                            <p style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">Nenhuma questão disponível</p>
+                            <p style="font-size:0.9rem;">Em breve novas questões serão adicionadas.</p>
+                        </div>
+                    </div>`;
+                }
+                UI.quizState.moduleId = moduleId;
+                UI.quizState.questions = moduleQuestions;
+                UI.quizState.currentIndex = 0;
+                UI.quizState.answered = false;
+                return `
+                    <div class="card">
+                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
+                        <h2>⚔️ Questões — ${mod.title}</h2>
+                        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Total: <strong>${moduleQuestions.length}</strong></p>
+                        <div class="quiz-filters">
+                            <select class="quiz-filter-select" id="quiz-filter-difficulty" onchange="UI.applyQuizFilters()">
+                                <option value="all">Todas as dificuldades</option>
+                                <option value="1">Fácil</option>
+                                <option value="2">Médio</option>
+                                <option value="3">Difícil</option>
+                            </select>
+                            <select class="quiz-filter-select" id="quiz-filter-type" onchange="UI.applyQuizFilters()">
+                                <option value="all">Todos os tipos</option>
+                                <option value="REAL">Questões Reais</option>
+                                <option value="DIDATICA">Questões Didáticas</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="UI.startQuiz()">Iniciar Prática</button>
+                    </div>`;
+            },
+            applyQuizFilters() {
+                const moduleId = UI.quizState.moduleId;
+                const difficulty = document.getElementById('quiz-filter-difficulty').value;
+                const type = document.getElementById('quiz-filter-type').value;
+                let filtered = Data.questions.filter(q => q.moduleId === moduleId);
+                if (difficulty !== 'all') filtered = filtered.filter(q => q.difficulty == difficulty);
+                if (type !== 'all') filtered = filtered.filter(q => q.type === type);
+                UI.quizState.questions = filtered;
+            },
+            startQuiz() {
+                if (UI.quizState.questions.length === 0) {
+                    UI.toast("Nenhuma questão disponível com os filtros selecionados.");
+                    return;
+                }
+                UI.quizState.currentIndex = 0;
+                UI.quizState.answered = false;
+                UI.renderQuizQuestion();
+            },
+            renderQuizQuestion() {
+                const q = UI.quizState.questions[UI.quizState.currentIndex];
+                const total = UI.quizState.questions.length;
+                const current = UI.quizState.currentIndex + 1;
+                const moduleId = UI.quizState.moduleId;
+                UI.quizState.answered = false;
+                const typeBadge = q.type === 'REAL'
+                    ? '<span class="quiz-type-badge quiz-type-real">Questão Real</span>'
+                    : '<span class="quiz-type-badge quiz-type-didatica">Questão Didática</span>';
+                document.getElementById('app-container').innerHTML = `
+                    <div class="card">
+                        <div class="quiz-header">
+                            <button class="btn btn-outline" style="width:auto;padding:0.4rem 0.8rem;margin:0;" onclick="Router.navigate('topic','${moduleId}')">← Sair</button>
+                            <div class="quiz-progress-text">Questão ${current} de ${total}</div>
+                        </div>
+                        ${typeBadge}
+                        <div class="quiz-statement">${q.statement}</div>
+                        <div class="quiz-alternatives" id="quiz-alts">
+                            ${q.alternatives.map(a => `
+                                <button class="quiz-alt-btn" data-id="${a.id}" onclick="UI.selectQuizAlt('${a.id}')">
+                                    <span class="quiz-alt-letter">${a.id}</span>
+                                    <span>${a.text}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div id="quiz-feedback" class="quiz-feedback"></div>
+                        <div class="quiz-actions">
+                            <button id="quiz-prev-btn" class="btn btn-outline ${current === 1 ? 'hidden' : ''}" onclick="UI.prevQuizQuestion()">← Anterior</button>
+                            <button id="quiz-next-btn" class="btn btn-primary hidden" onclick="UI.nextQuizQuestion()">${current < total ? 'Próxima →' : 'Finalizar'}</button>
+                        </div>
+                    </div>`;
+            },
+            selectQuizAlt(altId) {
+                if (UI.quizState.answered) return;
+                UI.quizState.answered = true;
+                const q = UI.quizState.questions[UI.quizState.currentIndex];
+                const isCorrect = altId === q.answer;
+                State.recordQuestionAnswer(q.id, altId, isCorrect, 'quiz');
+                document.querySelectorAll('.quiz-alt-btn').forEach(btn => {
+                    btn.classList.add('disabled');
+                    if (btn.dataset.id === q.answer) btn.classList.add('correct');
+                    else if (btn.dataset.id === altId && !isCorrect) btn.classList.add('wrong');
+                });
+                const fb = document.getElementById('quiz-feedback');
+                fb.className = `quiz-feedback visible ${isCorrect ? 'correct' : 'wrong'}`;
+                let feedbackHtml = `<strong>${isCorrect ? '✅ Acertou!' : '❌ Errou. Resposta correta: ' + q.answer + '.'}</strong>`;
+                if (q.explanation) {
+                    feedbackHtml += `<div class="quiz-feedback-section"><strong>💡 Por que ${q.answer} está correta?</strong>${q.explanation.correct}</div>`;
+                    if (!isCorrect && q.explanation.wrong) {
+                        feedbackHtml += `<div class="quiz-feedback-section"><strong>❌ Por que as outras estão erradas?</strong>`;
+                        Object.entries(q.explanation.wrong).forEach(([alt, exp]) => {
+                            feedbackHtml += `<div style="margin-top:0.25rem;"><strong>${alt}):</strong> ${exp}</div>`;
+                        });
+                        feedbackHtml += `</div>`;
+                    }
+                    if (q.explanation.concept) {
+                        feedbackHtml += `<div class="quiz-feedback-section"><strong>📚 Conceito:</strong> ${q.explanation.concept}</div>`;
+                    }
+                    if (q.explanation.trap) {
+                        feedbackHtml += `<div class="quiz-feedback-section"><strong>⚠️ Pegadinha:</strong> ${q.explanation.trap}</div>`;
+                    }
+                    if (q.explanation.examTip) {
+                        feedbackHtml += `<div class="quiz-feedback-section"><strong>🎓 Dica:</strong> ${q.explanation.examTip}</div>`;
+                    }
+                }
+                fb.innerHTML = feedbackHtml;
+                document.getElementById('quiz-next-btn').classList.remove('hidden');
+            },
+            prevQuizQuestion() {
+                if (UI.quizState.currentIndex > 0) {
+                    UI.quizState.currentIndex--;
+                    UI.renderQuizQuestion();
+                }
+            },
+            nextQuizQuestion() {
+                const total = UI.quizState.questions.length;
+                if (UI.quizState.currentIndex < total - 1) {
+                    UI.quizState.currentIndex++;
+                    UI.renderQuizQuestion();
+                } else {
+                    UI.toast("Quiz finalizado!");
+                    Router.navigate('topic', UI.quizState.moduleId);
+                }
+            },
             toggleTeacher(id, btn) {
                 const el = document.getElementById(id);
                 const vis = el.classList.contains('visible');
@@ -1056,7 +888,6 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 el.classList.toggle('visible');
                 btn.textContent = el.classList.contains('visible') ? 'Ocultar' : 'Revelar';
             },
-
             renderSettings() {
                 return `
                     <div class="card">
@@ -1066,20 +897,17 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                         <h3 style="margin-top:1.5rem;color:var(--danger);">Zona de Perigo</h3>
                         <button class="btn btn-danger" onclick="App.resetData()">🗑️ Resetar Todos os Dados</button>
                     </div>
-                    <div class="card"><h3>Sobre</h3><p style="font-size:0.85rem;color:var(--text-muted);"><strong>ADMIN-DIR</strong><br>Versão: 0.3 (Fase 3)<br>Single-File Offline</p></div>`;
+                    <div class="card"><h3>Sobre</h3><p style="font-size:0.85rem;color:var(--text-muted);"><strong>ADMIN-DIR</strong><br>Versão: 0.4 (Fase 4)<br>Single-File Offline</p></div>`;
             }
         };
 
-        /* =========================================
-           5. CAMADA DE ROTEAMENTO (ROUTER)
-           ========================================= */
         const Router = {
             currentRoute: 'dashboard',
             navigate(route, param = null) {
                 this.currentRoute = route;
                 const container = document.getElementById('app-container');
                 document.querySelectorAll('nav.bottom-nav button').forEach(btn => btn.classList.remove('active'));
-                const navBtn = document.getElementById(`nav-${['topic','lesson','diagnosis'].includes(route) ? 'modules' : route}`);
+                const navBtn = document.getElementById(`nav-${['topic','lesson','diagnosis','quiz'].includes(route) ? 'modules' : route}`);
                 if (navBtn) navBtn.classList.add('active');
                 window.scrollTo(0, 0);
                 switch(route) {
@@ -1088,21 +916,19 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                     case 'topic': container.innerHTML = UI.renderTopic(param); break;
                     case 'lesson': container.innerHTML = UI.renderLesson(param); break;
                     case 'diagnosis': container.innerHTML = UI.renderDiagnosis(param); break;
+                    case 'quiz': container.innerHTML = UI.renderQuiz(param); break;
                     case 'settings': container.innerHTML = UI.renderSettings(); break;
                     default: container.innerHTML = UI.renderDashboard();
                 }
             }
         };
 
-        /* =========================================
-           6. INICIALIZAÇÃO
-           ========================================= */
         const App = {
             init() {
                 State.init();
                 document.getElementById('app-version').textContent = `v${AppState.version}`;
                 Router.navigate('dashboard');
-                console.log("ADMIN-DIR v0.3 inicializado.");
+                console.log("ADMIN-DIR v0.4 inicializado.");
             },
             resetData() { State.reset(); }
         };
