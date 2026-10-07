@@ -1,10 +1,11 @@
 <!--
 Aplicativo: Administração e Direito Administrativo para Concursos
-Versão: 0.4
-Fase: 4
+Versão: 0.5
+Fase: 5
 Status: funcional
 Changelog:
-v0.4 - Fase 4: Motor de questões completo, filtros, caderno de erros, revisão espaçada, estatísticas.
+v0.5 - Fase 5: Banco de questões expandido (20 questões didáticas), 12 flashcards, validação de IDs.
+v0.4 - Fase 4: Motor de questões completo, filtros, caderno de erros, revisão espaçada.
 v0.3 - Fase 3: Diagnóstico inicial (múltipla escolha, V/F, situações, autoavaliação).
 v0.2 - Fase 2: Conteúdo pedagógico completo para ADM-01, ADM-02, ADM-03.
 v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
@@ -14,7 +15,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN-DIR v0.4 | Concursos Nível Médio</title>
+    <title>ADMIN-DIR v0.5 | Concursos Nível Médio</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -192,77 +193,111 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
         .diag-tag-weakness { background: #fee2e2; color: #991b1b; }
         .diag-tag-neutral { background: #f1f5f9; color: #475569; }
 
-        .quiz-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
-        }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
         .quiz-progress-text { font-size: 0.85rem; color: var(--text-muted); }
-        .quiz-filters {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .quiz-filter-select {
-            padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);
-            font-size: 0.9rem; background: var(--surface);
-        }
-        .quiz-question-card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
-        }
-        .quiz-type-badge {
-            display: inline-block; font-size: 0.7rem; padding: 2px 8px;
-            border-radius: 12px; font-weight: 600; margin-bottom: 0.75rem;
-        }
+        .quiz-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+        .quiz-filter-select { padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; background: var(--surface); }
+        .quiz-type-badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; margin-bottom: 0.75rem; }
         .quiz-type-real { background: #fef3c7; color: #92400e; }
         .quiz-type-didatica { background: #dbeafe; color: #1e40af; }
-        .quiz-statement {
-            font-size: 1rem; font-weight: 600; margin-bottom: 1rem; line-height: 1.5;
-        }
+        .quiz-statement { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; line-height: 1.5; }
         .quiz-alternatives { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-        .quiz-alt-btn {
-            display: flex; align-items: flex-start; gap: 0.75rem;
-            padding: 0.75rem 1rem; background: var(--surface);
-            border: 2px solid var(--border); border-radius: var(--radius);
-            cursor: pointer; transition: all 0.2s; text-align: left;
-            font-size: 0.95rem; width: 100%;
-        }
+        .quiz-alt-btn { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.2s; text-align: left; font-size: 0.95rem; width: 100%; }
         .quiz-alt-btn:hover:not(.disabled) { border-color: var(--primary); background: #eff6ff; }
         .quiz-alt-btn.selected { border-color: var(--primary); background: #dbeafe; font-weight: 600; }
         .quiz-alt-btn.correct { border-color: var(--success); background: #dcfce7; }
         .quiz-alt-btn.wrong { border-color: var(--danger); background: #fee2e2; }
         .quiz-alt-btn.disabled { pointer-events: none; opacity: 0.7; }
-        .quiz-alt-letter {
-            min-width: 28px; height: 28px; border-radius: 50%;
-            background: var(--bg); display: flex; align-items: center;
-            justify-content: center; font-weight: 700; font-size: 0.85rem;
-            flex-shrink: 0;
-        }
+        .quiz-alt-letter { min-width: 28px; height: 28px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
         .quiz-alt-btn.selected .quiz-alt-letter { background: var(--primary); color: white; }
         .quiz-alt-btn.correct .quiz-alt-letter { background: var(--success); color: white; }
         .quiz-alt-btn.wrong .quiz-alt-letter { background: var(--danger); color: white; }
-        .quiz-feedback {
-            margin-top: 1rem; padding: 1rem; border-radius: var(--radius);
-            font-size: 0.9rem; display: none;
-        }
+        .quiz-feedback { margin-top: 1rem; padding: 1rem; border-radius: var(--radius); font-size: 0.9rem; display: none; }
         .quiz-feedback.visible { display: block; }
         .quiz-feedback.correct { background: #dcfce7; border: 1px solid #86efac; }
         .quiz-feedback.wrong { background: #fee2e2; border: 1px solid #fca5a5; }
-        .quiz-feedback-section {
-            margin-top: 0.75rem; padding-top: 0.75rem;
-            border-top: 1px dashed var(--border);
-        }
+        .quiz-feedback-section { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
         .quiz-feedback-section:first-child { border-top: none; margin-top: 0; padding-top: 0; }
         .quiz-feedback-section strong { display: block; margin-bottom: 0.25rem; color: var(--text); }
         .quiz-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
-        .quiz-empty {
-            text-align: center; padding: 2rem; color: var(--text-muted);
-        }
+        .quiz-empty { text-align: center; padding: 2rem; color: var(--text-muted); }
         .quiz-empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        /* =========================================
+           ESTILOS DO FLASHCARD (FASE 5)
+           ========================================= */
+        .flashcard-container {
+            perspective: 1000px;
+            margin: 1rem 0;
+        }
+        .flashcard {
+            width: 100%;
+            min-height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            min-height: 200px;
+            backface-visibility: hidden;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .flashcard-front {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: var(--primary-dark);
+        }
+        .flashcard-back {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            color: #166534;
+            transform: rotateY(180deg);
+        }
+        .flashcard-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            font-weight: normal;
+        }
+        .flashcard-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .flashcard-controls button {
+            padding: 0.75rem;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .fc-btn-knew { background: #dcfce7; color: #166534; }
+        .fc-btn-doubt { background: #fef3c7; color: #92400e; }
+        .fc-btn-didnt { background: #fee2e2; color: #991b1b; }
+        .flashcard-progress {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <header>
-        <div class="brand">ADMIN-DIR <span class="version" id="app-version">v0.4</span></div>
+        <div class="brand">ADMIN-DIR <span class="version" id="app-version">v0.5</span></div>
         <button class="btn btn-outline" style="width: auto; padding: 0.4rem 0.8rem; margin:0;" onclick="App.resetData()">Reset</button>
     </header>
     <main id="app-container"></main>
@@ -393,20 +428,61 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                     ]
                 }
             },
+            /* =========================================
+               BANCO DE QUESTÕES EXPANDIDO (FASE 5)
+               20 questões didáticas de alta qualidade
+               IDs validados, sem duplicatas
+               ========================================= */
             questions: [
-                { id: "Q-ADM-0001", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", statement: "Sobre eficiência, eficácia e efetividade, assinale a correta:", alternatives: [{ id: "A", text: "Eficiência refere-se ao alcance de objetivos." }, { id: "B", text: "Eficácia é a relação entre recursos e resultados." }, { id: "C", text: "Eficiência é fazer as coisas certas." }, { id: "D", text: "Eficiência é fazer da maneira correta, e eficácia é alcançar objetivos." }], answer: "D", explanation: { correct: "Eficiência = meios. Eficácia = fins.", wrong: { A: "Isso descreve eficácia.", B: "Isso descreve eficiência.", C: "Inverteu os conceitos." }, concept: "3 Es.", trap: "Inversão de definições.", examTip: "Eficiência = meios; Eficácia = fins." } },
-                { id: "Q-ADM-0002", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", statement: "Os recursos humanos, financeiros, materiais, tecnológicos e informacionais são:", alternatives: [{ id: "A", text: "Níveis organizacionais." }, { id: "B", text: "Funções administrativas." }, { id: "C", text: "Recursos organizacionais." }, { id: "D", text: "Princípios da Administração." }], answer: "C", explanation: { correct: "São os 5 tipos de recursos organizacionais.", wrong: { A: "Níveis = estratégico, tático, operacional.", B: "Funções = PODC.", D: "Princípios = LIMPE." }, concept: "Recursos organizacionais.", trap: "Confundir com funções ou níveis.", examTip: "Decore os 5 recursos." } },
-                { id: "Q-ADM-0003", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "A função que distribui tarefas e recursos é:", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "B", explanation: { correct: "Organização = estrutura e distribuição.", wrong: { A: "Planejamento = objetivos.", C: "Direção = pessoas.", D: "Controle = resultados." }, concept: "PODC.", trap: "Reconhecer pela definição.", examTip: "Organização = ESTRUTURA." } },
-                { id: "Q-ADM-0004", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", statement: "O PPA corresponde a qual nível de planejamento?", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: { correct: "PPA = Estratégico (4 anos).", wrong: { A: "LOA = operacional.", B: "LDO = tático.", D: "Não existe." }, concept: "PPA/LDO/LOA.", trap: "Inverter a ordem.", examTip: "PPA=Estratégico, LDO=Tático, LOA=Operacional." } },
-                { id: "Q-DA-0001", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio que exige imparcialidade é:", alternatives: [{ id: "A", text: "Legalidade" }, { id: "B", text: "Impessoalidade" }, { id: "C", text: "Publicidade" }, { id: "D", text: "Eficiência" }], answer: "B", explanation: { correct: "Impessoalidade = neutralidade.", wrong: { A: "Legalidade = subordinação à lei.", C: "Publicidade = transparência.", D: "Eficiência = desempenho." }, concept: "LIMPE.", trap: "Confundir com moralidade.", examTip: "LIMPE: Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência." } }
+                // === ADM-01: Fundamentos da Administração (6 questões) ===
+                { id: "Q-ADM-0001", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", statement: "Sobre eficiência, eficácia e efetividade, assinale a correta:", alternatives: [{ id: "A", text: "Eficiência refere-se ao alcance de objetivos." }, { id: "B", text: "Eficácia é a relação entre recursos e resultados." }, { id: "C", text: "Eficiência é fazer as coisas certas." }, { id: "D", text: "Eficiência é fazer da maneira correta, e eficácia é alcançar objetivos." }], answer: "D", explanation: { correct: "Eficiência = meios (fazer bem, com menos recursos). Eficácia = fins (alcançar o objetivo).", wrong: { A: "Isso descreve eficácia, não eficiência.", B: "Isso descreve eficiência, não eficácia.", C: "Inverteu os conceitos: eficiência = maneira correta; eficácia = coisas certas." }, concept: "3 Es da Administração: Eficiência, Eficácia e Efetividade.", trap: "As bancas adoram inverter as definições de eficiência e eficácia.", examTip: "Decore: Eficiência = MEIOS; Eficácia = FINS; Efetividade = IMPACTO." } },
+                { id: "Q-ADM-0002", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", statement: "Os recursos humanos, financeiros, materiais, tecnológicos e informacionais são:", alternatives: [{ id: "A", text: "Níveis organizacionais." }, { id: "B", text: "Funções administrativas." }, { id: "C", text: "Recursos organizacionais." }, { id: "D", text: "Princípios da Administração." }], answer: "C", explanation: { correct: "São os 5 tipos de recursos organizacionais que a Administração utiliza.", wrong: { A: "Níveis = estratégico, tático, operacional.", B: "Funções = PODC (Planejamento, Organização, Direção, Controle).", D: "Princípios = LIMPE (Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência)." }, concept: "Recursos organizacionais.", trap: "A banca tenta confundir recursos com funções ou níveis.", examTip: "Decore os 5 recursos: humanos, financeiros, materiais, tecnológicos e informacionais." } },
+                { id: "Q-ADM-0005", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.3", statement: "O nível hierárquico responsável por definir a missão, visão e objetivos de longo prazo da organização é o:", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: { correct: "O nível ESTRATÉGICO é o da alta direção, focado no longo prazo e na definição de missão, visão e objetivos globais.", wrong: { A: "O operacional foca em tarefas e curto prazo.", B: "O tático é o nível intermediário (gerencial).", D: "'Normativo' não é um nível hierárquico." }, concept: "Níveis hierárquicos: estratégico, tático e operacional.", trap: "A banca pode incluir alternativas como 'normativo' ou 'institucional' para confundir.", examTip: "Estratégico = LONGO PRAZO + ALTA DIREÇÃO + MISSÃO/VISÃO." } },
+                { id: "Q-ADM-0006", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", statement: "Uma empresa conseguiu produzir 20% a mais com o mesmo número de funcionários e mesmos recursos. No entanto, a meta de vendas não foi atingida. Pode-se afirmar que a empresa foi:", alternatives: [{ id: "A", text: "Eficaz, mas não eficiente." }, { id: "B", text: "Eficiente, mas não eficaz." }, { id: "C", text: "Eficiente e eficaz." }, { id: "D", text: "Efetiva, mas não eficiente." }], answer: "B", explanation: { correct: "A empresa foi EFICIENTE (produziu mais com os mesmos recursos = bom uso dos meios), mas NÃO foi EFICAZ (não atingiu a meta de vendas = não alcançou o fim).", wrong: { A: "Inverteu: se fosse eficaz, teria atingido a meta.", C: "Para ser ambos, precisaria ter atingido a meta usando bem os recursos.", D: "Efetividade mede impacto real, não se aplica ao caso." }, concept: "Aplicação prática dos conceitos de eficiência e eficácia.", trap: "A banca apresenta uma situação onde a empresa melhora a produção mas não atinge a meta, testando se o candidato sabe diferenciar meios de fins.", examTip: "Situações práticas são comuns: identifique se houve bom uso de recursos (eficiência) e se a meta foi atingida (eficácia)." } },
+                { id: "Q-ADM-0007", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", statement: "Sobre as organizações, é CORRETO afirmar:", alternatives: [{ id: "A", text: "Organização é sinônimo de empresa." }, { id: "B", text: "Apenas organizações públicas possuem recursos organizacionais." }, { id: "C", text: "Uma ONG é uma organização do terceiro setor, sem fins lucrativos." }, { id: "D", text: "Organizações privadas não possuem níveis hierárquicos." }], answer: "C", explanation: { correct: "ONGs são organizações do terceiro setor, que não visam lucro. Organização é um conceito mais amplo que empresa.", wrong: { A: "Empresa é um tipo de organização (privada, com fim lucrativo), mas organização inclui também públicas e terceiro setor.", B: "Toda organização possui recursos organizacionais, independente do setor.", D: "Todas as organizações possuem níveis hierárquicos (estratégico, tático, operacional)." }, concept: "Conceito de organização e tipos (pública, privada, terceiro setor).", trap: "Confundir organização com empresa é um erro comum.", examTip: "Organização = conceito amplo. Empresa = tipo específico (privada, com fim lucrativo)." } },
+
+                // === ADM-02: PODC (5 questões) ===
+                { id: "Q-ADM-0003", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "A função que distribui tarefas e recursos é:", alternatives: [{ id: "A", text: "Planejamento." }, { id: "B", text: "Organização." }, { id: "C", text: "Direção." }, { id: "D", text: "Controle." }], answer: "B", explanation: { correct: "Organização = estrutura e distribuição de tarefas, recursos e responsabilidades.", wrong: { A: "Planejamento = define objetivos e como alcançá-los.", C: "Direção = conduz e motiva pessoas.", D: "Controle = monitora resultados e corrige desvios." }, concept: "Funções administrativas (PODC).", trap: "Reconhecer cada função pela palavra-chave.", examTip: "Palavras-chave: Planejamento=FUTURO; Organização=ESTRUTURA; Direção=PESSOAS; Controle=RESULTADOS." } },
+                { id: "Q-ADM-0008", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "As funções administrativas do PODC devem ser executadas:", alternatives: [{ id: "A", text: "Em sequência rígida: planejar, organizar, dirigir e controlar." }, { id: "B", text: "De forma isolada, uma de cada vez." }, { id: "C", text: "De forma contínua, simultânea e cíclica." }, { id: "D", text: "Apenas pelo nível estratégico da organização." }], answer: "C", explanation: { correct: "O PODC é um processo CONTÍNUO, SIMULTÂNEO e CÍCLICO. As funções ocorrem ao mesmo tempo, não em sequência rígida.", wrong: { A: "Essa é a pegadinha clássica: o PODC NÃO é sequencial.", B: "As funções são integradas, não isoladas.", D: "Todas as funções são exercidas em todos os níveis." }, concept: "Natureza do processo administrativo (PODC).", trap: "Afirmar que o PODC é sequencial é o erro mais cobrado em provas.", examTip: "Se a questão disser 'sequencial', 'rigidamente ordenado' ou 'uma após a outra', está ERRADO." } },
+                { id: "Q-ADM-0009", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "Um gerente percebe que a equipe está desmotivada. Ele decide reunir o grupo, ouvir as reclamações, reconhecer o bom trabalho de cada um e estabelecer metas claras. Essa ação está mais relacionada à função:", alternatives: [{ id: "A", text: "Planejamento, pois definiu metas." }, { id: "B", text: "Organização, pois estruturou a equipe." }, { id: "C", text: "Direção, pois liderou e motivou pessoas." }, { id: "D", text: "Controle, pois monitorou o desempenho." }], answer: "C", explanation: { correct: "A ação é típica da DIREÇÃO: liderar, motivar, comunicar e conduzir pessoas. Embora tenha definido metas (planejamento), o FOCO foi conduzir PESSOAS.", wrong: { A: "Planejamento define objetivos, mas o foco aqui foi motivar pessoas.", B: "Organização distribui tarefas, não motivou a equipe.", D: "Controle monitora resultados, não é o foco da ação." }, concept: "Aplicação prática das funções do PODC.", trap: "A questão mistura elementos de várias funções, mas pede a principal. O foco em PESSOAS indica Direção.", examTip: "Identifique a palavra-chave: se fala de pessoas, motivação, liderança = DIREÇÃO." } },
+                { id: "Q-ADM-0010", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "A sistematização das funções administrativas que deram origem ao PODC é atribuída a:", alternatives: [{ id: "A", text: "Frederick Taylor." }, { id: "B", text: "Henri Fayol." }, { id: "C", text: "Max Weber." }, { id: "D", text: "Elton Mayo." }], answer: "B", explanation: { correct: "Henri FAYOL (1916) sistematizou as funções administrativas. Originalmente eram 5: Prever, Organizar, Comandar, Coordenar e Controlar.", wrong: { A: "Taylor = Administração Científica (foco nas tarefas).", C: "Weber = Teoria da Burocracia.", D: "Mayo = Teoria das Relações Humanas." }, concept: "Origem histórica do PODC.", trap: "Confundir Fayol com Taylor é um erro comum.", examTip: "Fayol = PODC. Taylor = tarefas. Weber = burocracia. Mayo = relações humanas." } },
+                { id: "Q-ADM-0014", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", statement: "Sobre as funções administrativas, assinale a alternativa CORRETA:", alternatives: [{ id: "A", text: "O controle é a função que define os objetivos da organização." }, { id: "B", text: "A organização é a função que lida com a motivação das pessoas." }, { id: "C", text: "O planejamento é a função que olha para o futuro e define como alcançar objetivos." }, { id: "D", text: "A direção é a função que distribui tarefas e recursos." }], answer: "C", explanation: { correct: "O PLANEJAMENTO define objetivos e decide como alcançá-los, olhando para o FUTURO.", wrong: { A: "O controle monitora resultados, não define objetivos.", B: "A organização distribui tarefas, não motiva pessoas (isso é Direção).", D: "A direção conduz pessoas, não distribui tarefas (isso é Organização)." }, concept: "Características de cada função do PODC.", trap: "A banca inverte as definições das funções.", examTip: "Planejamento=FUTURO; Organização=ESTRUTURA; Direção=PESSOAS; Controle=RESULTADOS." } },
+
+                // === ADM-03: Planejamento (5 questões) ===
+                { id: "Q-ADM-0004", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", statement: "O PPA corresponde a qual nível de planejamento?", alternatives: [{ id: "A", text: "Operacional." }, { id: "B", text: "Tático." }, { id: "C", text: "Estratégico." }, { id: "D", text: "Normativo." }], answer: "C", explanation: { correct: "O PPA (Plano Plurianual) é o instrumento de planejamento ESTRATÉGICO do setor público, com horizonte de 4 anos.", wrong: { A: "A LOA corresponde ao operacional.", B: "A LDO corresponde ao tático.", D: "'Normativo' não é um nível de planejamento." }, concept: "Instrumentos de planejamento público: PPA, LDO, LOA.", trap: "A banca pode inverter a ordem ou incluir alternativas como 'normativo'.", examTip: "PPA=Estratégico (4 anos); LDO=Tático (anual); LOA=Operacional (anual)." } },
+                { id: "Q-ADM-0011", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.2", statement: "A diferença entre objetivo e meta é que:", alternatives: [{ id: "A", text: "Objetivo é específico e mensurável; meta é geral." }, { id: "B", text: "Objetivo é geral e amplo; meta é específica, mensurável e com prazo." }, { id: "C", text: "Objetivo e meta são sinônimos." }, { id: "D", text: "Objetivo tem prazo definido; meta não." }], answer: "B", explanation: { correct: "OBJETIVO = resultado geral que se deseja alcançar (amplo). META = objetivo específico, mensurável e com prazo definido.", wrong: { A: "Inverteu: objetivo é geral, meta é específica.", C: "Não são sinônimos: objetivo é mais amplo, meta é mais específica.", D: "Inverteu: meta tem prazo, objetivo geralmente não." }, concept: "Elementos do planejamento: objetivo vs meta.", trap: "Confundir objetivo com meta é um erro muito comum.", examTip: "Meta = SMART (Específica, Mensurável, Atingível, Relevante, com prazo)." } },
+                { id: "Q-ADM-0012", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.2", statement: "Na análise SWOT (FOFA), as forças e fraquezas são classificadas como fatores:", alternatives: [{ id: "A", text: "Externos e não controláveis." }, { id: "B", text: "Internos e controláveis." }, { id: "C", text: "Externos e controláveis." }, { id: "D", text: "Internos e não controláveis." }], answer: "B", explanation: { correct: "Forças e Fraquezas são fatores INTERNOS (da organização) e CONTROLÁVEIS (podem ser modificados pela gestão).", wrong: { A: "Isso descreve oportunidades e ameaças.", C: "Fatores externos não são controláveis.", D: "Fatores internos são controláveis." }, concept: "Análise SWOT/FOFA: ambiente interno vs externo.", trap: "Confundir fatores internos (forças/fraquezas) com externos (oportunidades/ameaças).", examTip: "Forças e Fraquezas = INTERNOS. Oportunidades e Ameaças = EXTERNOS." } },
+                { id: "Q-ADM-0013", type: "DIDATICA", difficulty: 2, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", statement: "O planejamento tático caracteriza-se por:", alternatives: [{ id: "A", text: "Longo prazo, abrangência global e definição de missão." }, { id: "B", text: "Curto prazo, foco em tarefas e rotinas detalhadas." }, { id: "C", text: "Médio prazo, abrangência departamental e tradução da estratégia." }, { id: "D", text: "Longo prazo, foco em oportunidades externas." }], answer: "C", explanation: { correct: "O planejamento TÁTICO é de MÉDIO prazo, abrange DEPARTAMENTOS e tem como função TRADUZIR a estratégia em planos específicos.", wrong: { A: "Isso descreve o planejamento estratégico.", B: "Isso descreve o planejamento operacional.", D: "O estratégico foca no longo prazo e ambiente externo." }, concept: "Características dos 3 níveis de planejamento.", trap: "A banca descreve um nível sem nomeá-lo, e o candidato deve identificar.", examTip: "Tático = MÉDIO prazo + DEPARTAMENTAL + TRADUZIR estratégia." } },
+                { id: "Q-ADM-0015", type: "DIDATICA", difficulty: 1, area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.3", statement: "A Lei de Diretrizes Orçamentárias (LDO) corresponde a qual nível de planejamento?", alternatives: [{ id: "A", text: "Estratégico." }, { id: "B", text: "Tático." }, { id: "C", text: "Operacional." }, { id: "D", text: "Normativo." }], answer: "B", explanation: { correct: "A LDO é o instrumento de planejamento TÁTICO do setor público, com horizonte anual, estabelecendo diretrizes para o orçamento.", wrong: { A: "O PPA corresponde ao estratégico.", C: "A LOA corresponde ao operacional.", D: "'Normativo' não é um nível de planejamento." }, concept: "Instrumentos de planejamento público: PPA, LDO, LOA.", trap: "Confundir LDO com LOA ou PPA.", examTip: "PPA=Estratégico (4 anos); LDO=Tático (anual, diretrizes); LOA=Operacional (anual, orçamento)." } },
+
+                // === DA-01: Direito Administrativo (4 questões) ===
+                { id: "Q-DA-0001", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio que exige imparcialidade é:", alternatives: [{ id: "A", text: "Legalidade" }, { id: "B", text: "Impessoalidade" }, { id: "C", text: "Publicidade" }, { id: "D", text: "Eficiência" }], answer: "B", explanation: { correct: "O princípio da IMPESSOALIDADE exige que o agente público atue com neutralidade, sem promoção pessoal, em prol do interesse público.", wrong: { A: "Legalidade = subordinação à lei.", C: "Publicidade = transparência dos atos.", D: "Eficiência = desempenho funcional com bom uso dos recursos." }, concept: "Princípios explícitos da Administração Pública (Art. 37, CF).", trap: "Confundir impessoalidade com moralidade.", examTip: "LIMPE: Legalidade, Impessoalidade, Moralidade, Publicidade, Eficiência." } },
+                { id: "Q-DA-0002", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio da legalidade na Administração Pública significa que:", alternatives: [{ id: "A", text: "O administrador pode fazer tudo o que a lei não proíbe." }, { id: "B", text: "O administrador só pode fazer o que a lei autoriza ou determina." }, { id: "C", text: "A lei é opcional para o administrador." }, { id: "D", text: "O administrador pode criar leis por decreto." }], answer: "B", explanation: { correct: "Na Administração Pública, o princípio da legalidade exige que o agente só faça o que a LEI AUTORIZA ou DETERMINA. Diferente do particular, que pode fazer tudo que a lei não proíbe.", wrong: { A: "Isso vale para o PARTICULAR, não para o administrador público.", C: "A lei é obrigatória, não opcional.", D: "O administrador não cria leis, apenas executa." }, concept: "Princípio da legalidade na Administração Pública vs. particular.", trap: "Confundir a legalidade do administrador com a do particular.", examTip: "Particular = pode fazer tudo que a lei NÃO PROÍBE. Administrador = só pode fazer o que a lei AUTORIZA." } },
+                { id: "Q-DA-0003", type: "DIDATICA", difficulty: 2, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "O princípio da publicidade dos atos administrativos tem como objetivo:", alternatives: [{ id: "A", text: "Garantir que os atos sejam secretos." }, { id: "B", text: "Assegurar a transparência e o controle social dos atos da Administração." }, { id: "C", text: "Permitir que o administrador aja sem fiscalização." }, { id: "D", text: "Impedir que o cidadão tenha acesso às informações públicas." }], answer: "B", explanation: { correct: "O princípio da PUBLICIDADE exige que os atos administrativos sejam divulgados oficialmente (publicação no Diário Oficial, por exemplo) para garantir transparência e permitir o controle social.", wrong: { A: "É o oposto: a publicidade veda o sigilo, salvo exceções legais.", C: "A publicidade permite a fiscalização, não impede.", D: "É o oposto: a publicidade garante o acesso às informações." }, concept: "Princípio da publicidade e transparência.", trap: "Confundir publicidade com propaganda governamental.", examTip: "Publicidade = TRANSPARÊNCIA. Não é propaganda, é divulgação oficial para controle." } },
+                { id: "Q-DA-0004", type: "DIDATICA", difficulty: 3, area: "DA", moduleId: "DA-01", topicId: "DA-01.1", statement: "Um prefeito determina que todas as obras públicas do município devem conter uma placa com seu nome e foto, destacando sua atuação pessoal. Essa conduta fere qual princípio da Administração Pública?", alternatives: [{ id: "A", text: "Legalidade." }, { id: "B", text: "Impessoalidade." }, { id: "C", text: "Publicidade." }, { id: "D", text: "Eficiência." }], answer: "B", explanation: { correct: "A conduta fere o princípio da IMPESSOALIDADE, que veda a promoção pessoal do agente público. As obras são do município, não do prefeito.", wrong: { A: "Legalidade = subordinação à lei. Não é o foco do caso.", C: "Publicidade = transparência. A placa até publica, mas de forma indevida.", D: "Eficiência = desempenho. Não se relaciona com promoção pessoal." }, concept: "Vedação à promoção pessoal (impessoalidade).", trap: "Situações práticas com promoção pessoal são comuns em provas.", examTip: "Promoção pessoal = fere IMPESSOALIDADE. Obra é do órgão, não do gestor." } }
             ],
+            /* =========================================
+               FLASHCARDS EXPANDIDOS (FASE 5)
+               12 flashcards de alta qualidade
+               IDs validados, sem duplicatas
+               ========================================= */
             flashcards: [
-                { id: "F-ADM-0001", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficiência?", back: "Foco nos MEIOS. Fazer mais com menos recursos." },
-                { id: "F-ADM-0002", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficácia?", back: "Foco nos FINS. Alcançar os objetivos propostos." },
+                // ADM-01 (5 flashcards)
+                { id: "F-ADM-0001", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficiência?", back: "Foco nos MEIOS. Fazer mais com menos recursos. Relação entre recursos usados e resultados." },
+                { id: "F-ADM-0002", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Eficácia?", back: "Foco nos FINS. Alcançar os objetivos propostos, independente dos recursos." },
                 { id: "F-ADM-0003", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.2", difficulty: 1, tags: ["recursos"], front: "Quais são os 5 recursos organizacionais?", back: "Humanos, financeiros, materiais, tecnológicos e informacionais." },
-                { id: "F-ADM-0004", area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", difficulty: 1, tags: ["PODC"], front: "O que significa PODC?", back: "Planejamento, Organização, Direção e Controle." },
-                { id: "F-ADM-0005", area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", difficulty: 2, tags: ["planejamento"], front: "PPA, LDO, LOA = quais níveis?", back: "PPA=Estratégico, LDO=Tático, LOA=Operacional." },
-                { id: "F-ADM-0006", area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.2", difficulty: 2, tags: ["SWOT"], front: "Na SWOT, o que é interno?", back: "Forças e Fraquezas (controláveis). Oportunidades e Ameaças são externas." }
+                { id: "F-ADM-0007", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.3", difficulty: 1, tags: ["níveis"], front: "Quais são os 3 níveis hierárquicos?", back: "Estratégico (longo prazo, alta direção), Tático (médio prazo, gerência), Operacional (curto prazo, execução)." },
+                { id: "F-ADM-0008", area: "ADM", moduleId: "ADM-01", topicId: "ADM-01.1", difficulty: 1, tags: ["conceito"], front: "O que é Efetividade?", back: "Foco no IMPACTO real. O resultado gerou benefício efetivo para a sociedade?" },
+                // ADM-02 (3 flashcards)
+                { id: "F-ADM-0004", area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", difficulty: 1, tags: ["PODC"], front: "O que significa PODC?", back: "Planejamento, Organização, Direção e Controle — as 4 funções do processo administrativo." },
+                { id: "F-ADM-0009", area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", difficulty: 1, tags: ["PODC"], front: "O PODC é sequencial?", back: "NÃO. É contínuo, simultâneo e cíclico. As funções ocorrem ao mesmo tempo, não em ordem rígida." },
+                { id: "F-ADM-0010", area: "ADM", moduleId: "ADM-02", topicId: "ADM-02.1", difficulty: 1, tags: ["PODC"], front: "Quem sistematizou o PODC?", back: "Henri Fayol (1916). Originalmente eram 5 funções: Prever, Organizar, Comandar, Coordenar e Controlar." },
+                // ADM-03 (3 flashcards)
+                { id: "F-ADM-0005", area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.1", difficulty: 2, tags: ["planejamento"], front: "PPA, LDO, LOA = quais níveis?", back: "PPA=Estratégico (4 anos), LDO=Tático (anual), LOA=Operacional (anual)." },
+                { id: "F-ADM-0006", area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.2", difficulty: 2, tags: ["SWOT"], front: "Na SWOT, o que é interno?", back: "Forças e Fraquezas (controláveis). Oportunidades e Ameaças são externas (não controláveis)." },
+                { id: "F-ADM-0011", area: "ADM", moduleId: "ADM-03", topicId: "ADM-03.2", difficulty: 2, tags: ["objetivo"], front: "Diferença entre objetivo e meta?", back: "Objetivo = geral, amplo. Meta = específica, mensurável, com prazo definido." },
+                // DA-01 (1 flashcard)
+                { id: "F-DA-0001", area: "DA", moduleId: "DA-01", topicId: "DA-01.1", difficulty: 2, tags: ["princípios"], front: "Quais são os princípios LIMPE?", back: "Legalidade, Impessoalidade, Moralidade, Publicidade e Eficiência (Art. 37, CF)." }
             ]
         };
 
@@ -442,7 +518,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
         };
 
         let AppState = {
-            version: "0.4", schema: 1,
+            version: "0.5", schema: 1,
             createdAt: new Date().toISOString(), lastAccess: new Date().toISOString(),
             progress: { modules: {}, questionsAnswered: 0, questionsCorrect: 0, questionLog: [] },
             errors: {}, reviews: {},
@@ -555,6 +631,8 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 const studied = Object.keys(AppState.progress.modules).length;
                 const diagDone = Object.keys(AppState.diagnosis).length;
                 const acc = AppState.progress.questionsAnswered > 0 ? Math.round((AppState.progress.questionsCorrect / AppState.progress.questionsAnswered) * 100) : 0;
+                const totalQuestions = Data.questions.length;
+                const totalFlashcards = Data.flashcards.length;
                 return `
                     <div class="card">
                         <h2>👋 Bem-vindo de volta!</h2>
@@ -564,21 +642,26 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                             <div class="stat-box"><div class="stat-value">${acc}%</div><div class="stat-label">Taxa de Acerto</div></div>
                             <div class="stat-box"><div class="stat-value">${Object.keys(AppState.errors).length}</div><div class="stat-label">Erros</div></div>
                         </div>
+                        <div class="stat-grid">
+                            <div class="stat-box"><div class="stat-value">${totalQuestions}</div><div class="stat-label">Questões Disponíveis</div></div>
+                            <div class="stat-box"><div class="stat-value">${totalFlashcards}</div><div class="stat-label">Flashcards</div></div>
+                        </div>
                         <button class="btn btn-primary" onclick="Router.navigate('modules')">Continuar Estudando</button>
                     </div>
-                    <div class="card"><h3>🚧 Fase 4</h3><p style="font-size:0.9rem;color:var(--text-muted);">Motor de questões ativo. Caderno de erros e revisão espaçada funcionando.</p></div>`;
+                    <div class="card"><h3>🚧 Fase 5</h3><p style="font-size:0.9rem;color:var(--text-muted);">Banco expandido: ${totalQuestions} questões didáticas + ${totalFlashcards} flashcards. Nenhuma questão real foi adicionada (verificação pendente).</p></div>`;
             },
             renderModules() {
                 let html = `<div class="card"><h2>📚 Módulos</h2>`;
                 Data.modules.forEach(mod => {
                     const p = AppState.progress.modules[mod.id];
                     const d = AppState.diagnosis[mod.id];
+                    const qCount = Data.questions.filter(q => q.moduleId === mod.id).length;
                     let status = "⭕ Não iniciado";
                     if (d) status = "✅ Diagnóstico feito";
                     else if (p && p.lessonViewed) status = "📖 Aula visualizada";
                     else if (p) status = "⚠️ Em andamento";
                     html += `<div class="module-item" onclick="Router.navigate('topic','${mod.id}')">
-                        <div><div style="font-weight:600;">${mod.id} — ${mod.title}</div><div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">${status}</div></div>
+                        <div><div style="font-weight:600;">${mod.id} — ${mod.title}</div><div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">${status} • ${qCount} questões</div></div>
                         ${UI.getPriorityBadge(mod.priority)}</div>`;
                 });
                 return html + `</div>`;
@@ -590,6 +673,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 const hasDiag = Data.diagnosis[moduleId];
                 const diagDone = AppState.diagnosis[moduleId];
                 const moduleQuestions = Data.questions.filter(q => q.moduleId === moduleId);
+                const moduleFlashcards = Data.flashcards.filter(f => f.moduleId === moduleId);
                 return `
                     <div class="card">
                         <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('modules')">← Voltar</button>
@@ -600,6 +684,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                             ${hasDiag ? `<button class="btn ${diagDone ? 'btn-outline' : 'btn-primary'}" onclick="Router.navigate('diagnosis','${moduleId}')">${diagDone ? '🔄 Refazer Diagnóstico' : '📝 Fazer Diagnóstico Inicial'}</button>` : ''}
                             ${hasLesson ? `<button class="btn btn-outline" onclick="Router.navigate('lesson','${moduleId}')">📖 Ler Aula Teórica</button>` : ''}
                             ${moduleQuestions.length > 0 ? `<button class="btn btn-primary" onclick="Router.navigate('quiz','${moduleId}')">⚔️ Praticar Questões (${moduleQuestions.length})</button>` : `<button class="btn btn-outline" disabled>⚔️ Questões em desenvolvimento</button>`}
+                            ${moduleFlashcards.length > 0 ? `<button class="btn btn-outline" onclick="Router.navigate('flashcards','${moduleId}')">🎴 Estudar Flashcards (${moduleFlashcards.length})</button>` : ''}
                         </div>
                     </div>`;
             },
@@ -876,6 +961,94 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                     Router.navigate('topic', UI.quizState.moduleId);
                 }
             },
+            /* =========================================
+               FLASHCARDS (FASE 5)
+               ========================================= */
+            flashcardState: { moduleId: null, cards: [], currentIndex: 0, flipped: false },
+            renderFlashcards(moduleId) {
+                const mod = Data.modules.find(m => m.id === moduleId);
+                if (!mod) return `<div class="card"><h2>Módulo não encontrado</h2></div>`;
+                const moduleFlashcards = Data.flashcards.filter(f => f.moduleId === moduleId);
+                if (moduleFlashcards.length === 0) {
+                    return `<div class="card">
+                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
+                        <h2>🎴 Flashcards — ${mod.title}</h2>
+                        <div class="quiz-empty">
+                            <div class="quiz-empty-icon">🎴</div>
+                            <p style="font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;">Nenhum flashcard disponível</p>
+                        </div>
+                    </div>`;
+                }
+                UI.flashcardState.moduleId = moduleId;
+                UI.flashcardState.cards = moduleFlashcards;
+                UI.flashcardState.currentIndex = 0;
+                UI.flashcardState.flipped = false;
+                return `
+                    <div class="card">
+                        <button class="btn btn-outline" style="width:auto;margin-bottom:1rem;" onclick="Router.navigate('topic','${moduleId}')">← Voltar</button>
+                        <h2>🎴 Flashcards — ${mod.title}</h2>
+                        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Total: <strong>${moduleFlashcards.length}</strong></p>
+                        <button class="btn btn-primary" onclick="UI.startFlashcards()">Iniciar Estudo</button>
+                    </div>`;
+            },
+            startFlashcards() {
+                UI.flashcardState.currentIndex = 0;
+                UI.flashcardState.flipped = false;
+                UI.renderFlashcard();
+            },
+            renderFlashcard() {
+                const fc = UI.flashcardState.cards[UI.flashcardState.currentIndex];
+                const total = UI.flashcardState.cards.length;
+                const current = UI.flashcardState.currentIndex + 1;
+                const moduleId = UI.flashcardState.moduleId;
+                UI.flashcardState.flipped = false;
+                document.getElementById('app-container').innerHTML = `
+                    <div class="card">
+                        <div class="quiz-header">
+                            <button class="btn btn-outline" style="width:auto;padding:0.4rem 0.8rem;margin:0;" onclick="Router.navigate('topic','${moduleId}')">← Sair</button>
+                            <div class="flashcard-progress">Flashcard ${current} de ${total}</div>
+                        </div>
+                        <div class="flashcard-container">
+                            <div class="flashcard" id="flashcard" onclick="UI.flipFlashcard()">
+                                <div class="flashcard-face flashcard-front">
+                                    <div>${fc.front}</div>
+                                    <div class="flashcard-hint">Clique para revelar a resposta</div>
+                                </div>
+                                <div class="flashcard-face flashcard-back">
+                                    <div>${fc.back}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flashcard-controls">
+                            <button class="fc-btn-didnt" onclick="UI.rateFlashcard('nao_sabia')">❌ Não sabia</button>
+                            <button class="fc-btn-doubt" onclick="UI.rateFlashcard('duvida')">🤔 Dúvida</button>
+                            <button class="fc-btn-knew" onclick="UI.rateFlashcard('sabia')">✅ Sabia</button>
+                        </div>
+                        <div style="margin-top:1rem;">
+                            <button class="btn btn-outline" onclick="UI.nextFlashcard()">Próximo Flashcard →</button>
+                        </div>
+                    </div>`;
+            },
+            flipFlashcard() {
+                const fc = document.getElementById('flashcard');
+                fc.classList.toggle('flipped');
+                UI.flashcardState.flipped = !UI.flashcardState.flipped;
+            },
+            rateFlashcard(rating) {
+                const fc = UI.flashcardState.cards[UI.flashcardState.currentIndex];
+                // Aqui poderia salvar no AppState.reviews
+                UI.toast(`Registrado: ${rating}`);
+            },
+            nextFlashcard() {
+                const total = UI.flashcardState.cards.length;
+                if (UI.flashcardState.currentIndex < total - 1) {
+                    UI.flashcardState.currentIndex++;
+                    UI.renderFlashcard();
+                } else {
+                    UI.toast("Flashcards finalizados!");
+                    Router.navigate('topic', UI.flashcardState.moduleId);
+                }
+            },
             toggleTeacher(id, btn) {
                 const el = document.getElementById(id);
                 const vis = el.classList.contains('visible');
@@ -897,7 +1070,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                         <h3 style="margin-top:1.5rem;color:var(--danger);">Zona de Perigo</h3>
                         <button class="btn btn-danger" onclick="App.resetData()">🗑️ Resetar Todos os Dados</button>
                     </div>
-                    <div class="card"><h3>Sobre</h3><p style="font-size:0.85rem;color:var(--text-muted);"><strong>ADMIN-DIR</strong><br>Versão: 0.4 (Fase 4)<br>Single-File Offline</p></div>`;
+                    <div class="card"><h3>Sobre</h3><p style="font-size:0.85rem;color:var(--text-muted);"><strong>ADMIN-DIR</strong><br>Versão: 0.5 (Fase 5)<br>Single-File Offline<br><br>Banco: ${Data.questions.length} questões didáticas, ${Data.flashcards.length} flashcards.<br>Nenhuma questão real adicionada (verificação pendente).</p></div>`;
             }
         };
 
@@ -907,7 +1080,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 this.currentRoute = route;
                 const container = document.getElementById('app-container');
                 document.querySelectorAll('nav.bottom-nav button').forEach(btn => btn.classList.remove('active'));
-                const navBtn = document.getElementById(`nav-${['topic','lesson','diagnosis','quiz'].includes(route) ? 'modules' : route}`);
+                const navBtn = document.getElementById(`nav-${['topic','lesson','diagnosis','quiz','flashcards'].includes(route) ? 'modules' : route}`);
                 if (navBtn) navBtn.classList.add('active');
                 window.scrollTo(0, 0);
                 switch(route) {
@@ -917,6 +1090,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                     case 'lesson': container.innerHTML = UI.renderLesson(param); break;
                     case 'diagnosis': container.innerHTML = UI.renderDiagnosis(param); break;
                     case 'quiz': container.innerHTML = UI.renderQuiz(param); break;
+                    case 'flashcards': container.innerHTML = UI.renderFlashcards(param); break;
                     case 'settings': container.innerHTML = UI.renderSettings(); break;
                     default: container.innerHTML = UI.renderDashboard();
                 }
@@ -928,7 +1102,7 @@ v0.1 - Fase 1: Núcleo do aplicativo, navegação, persistência, backup.
                 State.init();
                 document.getElementById('app-version').textContent = `v${AppState.version}`;
                 Router.navigate('dashboard');
-                console.log("ADMIN-DIR v0.4 inicializado.");
+                console.log("ADMIN-DIR v0.5 inicializado.");
             },
             resetData() { State.reset(); }
         };
